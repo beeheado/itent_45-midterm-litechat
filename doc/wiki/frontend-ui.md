@@ -9,7 +9,7 @@ The Phase 5 UI uses Django templates and app static assets under `chat/templates
 - `partials/model_selector.html` provides an account selector, cost caption, Cards/Compact toggle, and active OpenAI Luna/Terra/Sol cards. Session creation validates account ownership and model activity on the server before redirecting.
 - `session.html` renders completed messages and a composer. User-visible assistant content is rendered as Markdown; `reasoning_content` is never rendered.
 - `profile.html` edits the global prompt, AI memory opt-in, memory records, and an explicit mock +500-credit top-up.
-- `simgen.html` is a placeholder only.
+- `simgen.html` is a placeholder only; no simulation behavior is implemented.
 
 Default personal BillingAccounts are created lazily for authenticated users. Session lists, profile actions, memory CRUD, and billing account operations are scoped to the authenticated user. The top-up appends a 500-credit `DEPOSIT` through `deposit_credits()` and does not process payment.
 

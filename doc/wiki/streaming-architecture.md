@@ -6,9 +6,9 @@
 
 The Django endpoint is `POST /api/chat/sessions/<session_id>/completions/` with a JSON `content` string. It requires an authenticated session owner and an active selected model.
 
-### Phase 5 HTMX SSE Integration Gate
+### Browser Client Integration
 
-The current completion endpoint accepts POST so the prompt can be submitted with the request body. Browser `EventSource`, which the HTMX SSE extension uses, only opens GET requests and cannot submit this body. Phase 5 must either add a POST preparation step that returns a one-time GET stream URL (persisting enough pending-generation state for the GET request), or revise the client requirement to use `fetch()` streaming. The Phase 4 endpoint should not be connected directly with `sse-connect` until this method mismatch is resolved.
+The completion endpoint accepts POST JSON at `/api/chat/sessions/<session_id>/completions/`. The browser uses `fetch()` with same-origin credentials and a CSRF token, then incrementally reads `response.body` with a `ReadableStream` reader. HTMX handles navigation/forms; it does not use `EventSource` for this endpoint because EventSource is GET-only.
 
 The parser consumes raw async response bytes and buffers line/event boundaries independently of network chunk boundaries. It accepts fixture-shaped `data:` JSON events, LF/CRLF, and multiple data lines; malformed JSON, upstream error events, and EOF without `[DONE]` fail the completion. It does not rely on every event containing a choice or text.
 
@@ -57,4 +57,4 @@ Run through ASGI with `.venv/bin/uvicorn heavychat.asgi:application`. Streaming 
 
 SQLite does not provide effective row-level `select_for_update()` semantics. Unit/integration tests verify single-process reservation and settlement, not concurrent production spending. Use the production database (preferably PostgreSQL) for concurrency tests before multi-worker billing.
 
-The Phase 4 tests replay `tests/fixtures/provider_stream.sse` and mock the SDK stream; they do not make paid live provider calls. Phase 5 frontend work remains out of scope.
+The automated tests replay `tests/fixtures/provider_stream.sse` and mock the SDK stream; they do not make paid live provider calls. The browser client is the vanilla `fetch()` reader documented in `doc/wiki/frontend-ui.md`.

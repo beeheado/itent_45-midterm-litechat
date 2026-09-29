@@ -47,3 +47,9 @@ The stream consumer must:
 - Handle `delta.reasoning_content` independently; do not expose it as user-visible content by default.
 - Continue after a `finish_reason` chunk and consume the subsequent usage-only chunk.
 - Read the aggregate prompt/completion token counts from the final usage object and recognize `[DONE]` as stream termination.
+
+## HeavyChat Client Implementation
+
+`chat/services/proxy_stream.py` now consumes the provider-prefixed endpoint through the official async OpenAI SDK's raw response iterator, preserving SSE framing for the byte parser. It handles `reasoning_content` independently and rejects a stream that ends without `[DONE]`. The browser-facing stream sends only content deltas; reasoning remains server-side.
+
+Catalog rates currently come from the user's supplied baseline configuration, not from a provider response: Luna $0.15/$0.60, Terra $0.50/$2.00, and Sol $2.50/$10.00 per million input/output tokens.

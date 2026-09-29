@@ -47,6 +47,10 @@ If `r` credits were reserved and actual use costs `d`, the settlement adjustment
 
 This catalog seed is configuration, not a captured provider response.
 
+## Demo Account
+
+Run `.venv/bin/python manage.py setup_demo` after migrations and catalog loading. It idempotently creates user `luis`, account `[Personal] LUIS CLARENCE MARIANO`, one sample profile, one Preference memory, and a 1,000-credit deposit through the ledger service. A random local password is generated and printed once on first creation; set `HEAVYCHAT_DEMO_PASSWORD` in `.env` to use a chosen local password instead. Re-running does not reset the password or add the initial deposit again.
+
 ## Integrity and Operational Limits
 
 Database constraints enforce nonnegative balances, token counts, costs, rates, and credit debits; foreign keys and unique constraints enforce relationships/idempotency. ORM guards reject ordinary ledger and usage record updates/deletes, but privileged raw SQL or bulk `QuerySet.update()` can bypass application immutability.
