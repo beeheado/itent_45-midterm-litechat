@@ -22,20 +22,34 @@ def test_setup_demo_is_idempotent_and_posts_initial_credit_once(monkeypatch):
         user=user,
         name="[Personal] LUIS CLARENCE MARIANO",
     )
+    beeheado = get_user_model().objects.get(username="beeheado")
+    beeheado_account = BillingAccount.objects.get(
+        user=beeheado,
+        name="[Personal] beeheado",
+    )
     profile = UserProfile.objects.get(user=user)
     memory = MemoryItem.objects.get(user_profile=profile)
     password_line = next(
         line
         for line in first_output.getvalue().splitlines()
-        if line.startswith("Generated one-time local demo password")
+        if "for 'luis'" in line
     )
     generated_password = password_line.rsplit(": ", 1)[1]
+    beeheado_password_line = next(
+        line
+        for line in first_output.getvalue().splitlines()
+        if "for 'beeheado'" in line
+    )
+    beeheado_password = beeheado_password_line.rsplit(": ", 1)[1]
 
     assert user.check_password(generated_password)
+    assert beeheado.check_password(beeheado_password)
     assert user.get_full_name() == "LUIS CLARENCE MARIANO"
     assert account.credit_balance == 1000
+    assert beeheado_account.credit_balance == 1000
     assert profile.ai_memories_enabled is True
     assert profile.global_system_prompt
+    assert UserProfile.objects.filter(user=beeheado).exists()
     assert memory.category == MemoryItem.Category.PREFERENCE
     assert memory.is_active is True
     assert CreditLedger.objects.filter(
@@ -44,13 +58,24 @@ def test_setup_demo_is_idempotent_and_posts_initial_credit_once(monkeypatch):
         amount=1000,
         idempotency_key="setup-demo:luis:initial-credits-v1",
     ).count() == 1
+    assert CreditLedger.objects.filter(
+        billing_account=beeheado_account,
+        kind=CreditLedger.Kind.DEPOSIT,
+        amount=1000,
+        idempotency_key="setup-demo:beeheado:initial-credits-v1",
+    ).count() == 1
 
     second_output = StringIO()
     call_command("setup_demo", stdout=second_output)
     account.refresh_from_db()
+    beeheado_account.refresh_from_db()
     assert account.credit_balance == 1000
+    assert beeheado_account.credit_balance == 1000
     assert CreditLedger.objects.filter(
         idempotency_key="setup-demo:luis:initial-credits-v1"
+    ).count() == 1
+    assert CreditLedger.objects.filter(
+        idempotency_key="setup-demo:beeheado:initial-credits-v1"
     ).count() == 1
     assert "Generated one-time local demo password" not in second_output.getvalue()
 
@@ -59,6 +84,8 @@ def test_setup_demo_is_idempotent_and_posts_initial_credit_once(monkeypatch):
     call_command("setup_demo", reset_password=True, stdout=reset_output)
     user.refresh_from_db()
     assert user.check_password("controlled-test-password")
+    beeheado.refresh_from_db()
+    assert beeheado.check_password(beeheado_password)
     assert "controlled-test-password" not in reset_output.getvalue()
     account.refresh_from_db()
     assert account.credit_balance == 1000

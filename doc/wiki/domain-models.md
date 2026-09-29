@@ -49,7 +49,7 @@ This catalog seed is configuration, not a captured provider response.
 
 ## Demo Account
 
-Run `.venv/bin/python manage.py setup_demo` after migrations and catalog loading. It idempotently creates user `luis`, account `[Personal] LUIS CLARENCE MARIANO`, one sample profile, one Preference memory, and a 1,000-credit deposit through the ledger service. A random local password is generated and printed once on first creation; set `HEAVYCHAT_DEMO_PASSWORD` in `.env` to use a chosen local password instead. Re-running does not reset the password or add the initial deposit again.
+Run `.venv/bin/python manage.py setup_demo` after migrations and catalog loading. It idempotently creates users `luis` and `beeheado`, personal accounts `[Personal] LUIS CLARENCE MARIANO` and `[Personal] beeheado`, default profiles, and a 1,000-credit DEPOSIT for each through the ledger service. `luis` also receives a Preference memory. Random local passwords are generated and printed once for new users; set `HEAVYCHAT_DEMO_PASSWORD` in `.env` to use a chosen password. Re-running does not reset existing passwords or duplicate either initial deposit.
 
 ## Integrity and Operational Limits
 

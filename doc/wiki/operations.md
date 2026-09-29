@@ -19,7 +19,7 @@ Create the repeatable grader account and sample context with:
 .venv/bin/python manage.py setup_demo
 ```
 
-The command creates username `luis`, display/account name `LUIS CLARENCE MARIANO` / `[Personal] LUIS CLARENCE MARIANO`, a 1,000-credit initial DEPOSIT, a global profile prompt, and a Preference memory. The deposit uses a stable idempotency key. On first creation a random password is printed once; alternatively set `HEAVYCHAT_DEMO_PASSWORD` in `.env`. Existing credentials and balances are not reset when rerunning. Use `--reset-password` only when intentionally rotating the local demo password.
+The command creates users `luis` and `beeheado`, personal accounts `[Personal] LUIS CLARENCE MARIANO` and `[Personal] beeheado`, and a default profile with a 1,000-credit initial DEPOSIT for each. `luis` also receives a Preference memory. Deposits use separate stable idempotency keys. On first creation a random password is printed once for each user; alternatively set `HEAVYCHAT_DEMO_PASSWORD` in `.env`. Existing credentials and balances are not reset when rerunning. Use `--reset-password` only when intentionally rotating `luis`'s local demo password.
 
 All three OpenAI tier catalog rows load as active from user-supplied baseline rates: Luna `$0.15/$0.60`, Terra `$0.50/$2.00`, and Sol `$2.50/$10.00` input/output per million. These are not provider-captured pricing data.
 
@@ -45,6 +45,7 @@ The tests replay the saved provider stream and mock upstream responses. They do 
 ## Runtime and Release Caveats
 
 - `.env`, `.venv/`, SQLite data, pytest cache, and Python bytecode are excluded by `.gitignore`.
+- `STATIC_URL` is root-relative (`/static/`) so local CSS/JavaScript resolves from nested routes as well as `/`.
 - The model stream uses POST `fetch()` with SSE response events; reverse proxies must disable response buffering and allow long-lived requests.
 - SQLite is for local development. Use the selected production database for row-lock and multi-worker ledger tests before real billing.
 - Django 5.1.15 is unsupported due to the requested `<5.2` pin. The current package is for local midterm demonstration, not production deployment.

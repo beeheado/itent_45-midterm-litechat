@@ -35,7 +35,7 @@ HeavyChat is a Django-based AI chat workbench with account-bound billing, an aud
    .venv/bin/uvicorn heavychat.asgi:application --host 127.0.0.1 --port 8000 --reload
    ```
 
-On first creation, `setup_demo` prints a generated local password once. Copy it from that terminal output to log in as `luis`. Set `HEAVYCHAT_DEMO_PASSWORD` in `.env` before seeding if you prefer a chosen local password. The command is idempotent and does not reset the password or add the 1,000-credit initial deposit again. It seeds `[Personal] LUIS CLARENCE MARIANO`, a profile, and a Preference memory.
+On first creation, `setup_demo` prints a generated local password once for each new user. Copy the password marked for `luis` or `beeheado` from that terminal output to sign in. Set `HEAVYCHAT_DEMO_PASSWORD` in `.env` before seeding if you prefer a chosen local password. The command is idempotent and does not reset existing passwords or add the 1,000-credit initial deposits again. It creates `[Personal] LUIS CLARENCE MARIANO` and `[Personal] beeheado`, each with a default profile; `luis` also gets a Preference memory.
 
 The UI and demo seed can run without a provider key, but live completions return a configuration error until `OPENAI_PROXY_KEY` is present.
 

@@ -2,7 +2,7 @@
 
 ## Application Status
 
-HeavyChat is a server-rendered AI chat application with account-bound credit billing, append-only ledger entries, model tiers, profile/memory context, asynchronous provider streaming, and a responsive template UI. Simulation behavior is not implemented. Phase 6 adds a reproducible local demo user and final verification documentation.
+HeavyChat is a server-rendered AI chat application with account-bound credit billing, append-only ledger entries, model tiers, profile/memory context, asynchronous provider streaming, and a responsive template UI. Simulation behavior is not implemented. The release setup provisions repeatable local demo users and root-relative static asset URLs.
 
 ## Runtime and Project Layout
 
@@ -79,4 +79,6 @@ One credit equals one cent. Catalog rates are Decimal USD per million tokens. Th
 
 ## Final Demo Seed
 
-After applying migrations and loading `model_catalog`, `.venv/bin/python manage.py setup_demo` idempotently creates the local `luis` user, `[Personal] LUIS CLARENCE MARIANO` account, sample profile/memory, and a 1,000-credit ledger deposit. It generates and prints a one-time password on first creation unless `HEAVYCHAT_DEMO_PASSWORD` is set. It never stores a plaintext password or re-adds the seed deposit on rerun.
+After applying migrations and loading `model_catalog`, `.venv/bin/python manage.py setup_demo` idempotently creates users `luis` and `beeheado`, their personal accounts (`[Personal] LUIS CLARENCE MARIANO` and `[Personal] beeheado`), and default profiles. Each receives a 1,000-credit ledger deposit exactly once. Newly generated local passwords are printed once per new user unless `HEAVYCHAT_DEMO_PASSWORD` is set. The command does not store plaintext passwords or re-add seed deposits on rerun.
+
+`STATIC_URL` is `/static/` so `{% static %}` resolves correctly on nested routes. Local CSS and JavaScript are served from the Django staticfiles app during development.

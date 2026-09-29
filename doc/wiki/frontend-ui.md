@@ -4,6 +4,8 @@
 
 The Phase 5 UI uses Django templates and app static assets under `chat/templates/chat/` and `chat/static/chat/`.
 
+The base template loads Tailwind, HTMX, marked.js, DOMPurify, and highlight.js from pinned CDN URLs in `<head>`. The dark highlight.js theme and local `app.css` are loaded there as well. Django's root-relative `STATIC_URL = "/static/"` keeps the local CSS and JavaScript paths valid from nested session/profile routes. The component class names below are styled by `app.css`; Tailwind utilities are used only where present in the markup.
+
 - `base.html` provides the responsive dark workspace shell, HeavyChat branding, Chat/SimGen/Profile navigation, session list, and the current BillingAccount/credits/USD badge.
 - `home.html` is the no-session landing page. The `+` and primary action load the model selector using HTMX.
 - `partials/model_selector.html` provides an account selector, cost caption, Cards/Compact toggle, and active OpenAI Luna/Terra/Sol cards. Session creation validates account ownership and model activity on the server before redirecting.

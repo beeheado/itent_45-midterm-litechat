@@ -6,6 +6,8 @@ HeavyChat is a Django 5.1 ASGI application. Django templates render the UI; HTMX
 
 The `chat` app owns views and provider streaming. The `core` app owns profiles, memories, model catalog, chat sessions/messages, billing accounts, and usage records. SQLite is the local database. Credit changes go through transactional services and an append-only ledger; completed usage records retain token counts, request-time rates, cost, and credit debit. One credit is $0.01.
 
+The base template loads the app CSS/JavaScript from root-relative `/static/` URLs so assets resolve on nested routes as well as the home page. The UI uses component styles in `chat/static/chat/css/app.css`, with Tailwind CDN utilities available where used.
+
 ## Provider Contract
 
 - OpenAI-compatible chat endpoint: `https://proxy.litechat.ai/openai/v1/chat/completions`.
@@ -48,7 +50,7 @@ Start the ASGI server:
 .venv/bin/uvicorn heavychat.asgi:application --host 127.0.0.1 --port 8000 --reload
 ```
 
-Open `http://127.0.0.1:8000/` and sign in as `luis`. On first setup, the command prints a generated local password once; alternatively set `HEAVYCHAT_DEMO_PASSWORD` before running it. The idempotent command creates a personal account with 1,000 credits ($10.00) and a default profile without depositing those credits again on subsequent runs.
+Open `http://127.0.0.1:8000/` and sign in as `luis` or `beeheado`. On first setup, the command prints a generated local password once for each newly created user; alternatively set `HEAVYCHAT_DEMO_PASSWORD` before running it. Each user gets a separate personal account with 1,000 credits ($10.00) and a default profile. Stable ledger keys prevent the initial deposit from being added again on subsequent runs.
 
 Run the suite with `.venv/bin/python -m pytest`. The tests do not require a provider key or live network access.
 
