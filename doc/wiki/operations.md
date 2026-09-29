@@ -19,6 +19,12 @@ Create the repeatable grader account and sample context with:
 .venv/bin/python manage.py setup_demo
 ```
 
+Open `http://127.0.0.1:8000/accounts/login/` to sign in as `luis` or `beeheado`. When redirected from a protected page, the successful login returns to the requested page. New demo-user passwords are printed once during seeding. If a password was not saved, reset it locally without exposing it in source control:
+
+```sh
+.venv/bin/python manage.py shell -c "from django.contrib.auth import get_user_model; u = get_user_model().objects.get(username='beeheado'); u.set_password('choose-a-local-password'); u.save(update_fields=['password'])"
+```
+
 The command creates users `luis` and `beeheado`, personal accounts `[Personal] LUIS CLARENCE MARIANO` and `[Personal] beeheado`, and a default profile with a 1,000-credit initial DEPOSIT for each. `luis` also receives a Preference memory. Deposits use separate stable idempotency keys. On first creation a random password is printed once for each user; alternatively set `HEAVYCHAT_DEMO_PASSWORD` in `.env`. Existing credentials and balances are not reset when rerunning. Use `--reset-password` only when intentionally rotating `luis`'s local demo password.
 
 All three OpenAI tier catalog rows load as active from user-supplied baseline rates: Luna `$0.15/$0.60`, Terra `$0.50/$2.00`, and Sol `$2.50/$10.00` input/output per million. These are not provider-captured pricing data.

@@ -84,6 +84,8 @@ Initialize the database and demo users:
 .venv/bin/python manage.py setup_demo
 ```
 
+Start the server, then sign in at `http://127.0.0.1:8000/accounts/login/` as `luis` or `beeheado`. The login page honors protected-page redirects and returns direct logins to `/`. If a generated local password was not saved, use Django's `manage.py shell` to set a new password for that account; do not put it in committed files.
+
 Run verification and start the ASGI development server:
 
 ```sh

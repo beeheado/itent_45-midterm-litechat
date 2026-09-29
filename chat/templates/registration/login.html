@@ -1,0 +1,38 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Sign in · HeavyChat</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="{% static 'chat/css/app.css' %}">
+</head>
+<body class="auth-body">
+  <main class="auth-layout">
+    <section class="auth-card" aria-labelledby="login-title">
+      <a class="auth-brand" href="/" aria-label="HeavyChat home">
+        <span class="auth-brand-mark" aria-hidden="true">H</span>
+        <span>HeavyChat</span>
+      </a>
+      <h1 id="login-title">Welcome back.</h1>
+      <p class="auth-intro">Sign in to open your private workspace.</p>
+
+      <form class="auth-form" method="post" action="{% url 'login' %}">
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+          <div class="auth-errors" role="alert">{{ form.non_field_errors }}</div>
+        {% endif %}
+        <label for="id_username">Username</label>
+        <input id="id_username" name="username" type="text" autocomplete="username" required autofocus value="{{ form.username.value|default_if_none:'' }}">
+        <label for="id_password">Password</label>
+        <input id="id_password" name="password" type="password" autocomplete="current-password" required>
+        <input type="hidden" name="next" value="{{ next }}">
+        <button class="primary-button auth-submit" type="submit">Sign in</button>
+      </form>
+      <p class="auth-footnote">Use the local demo password printed by <code>setup_demo</code> when the account was created.</p>
+    </section>
+  </main>
+</body>
+</html>
