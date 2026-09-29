@@ -6,7 +6,6 @@ from . import views
 app_name = "chat"
 urlpatterns = [
     path("", views.home, name="home"),
-    path("simgen/", views.simgen_placeholder, name="simgen"),
     path("profile/", views.profile, name="profile"),
     path("profile/prompt/", views.save_global_prompt, name="save-global-prompt"),
     path("profile/memories/toggle/", views.toggle_ai_memories, name="toggle-memories"),

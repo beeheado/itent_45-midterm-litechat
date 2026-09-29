@@ -1,34 +1,74 @@
-# HeavyChat Handoff
+# HeavyChat Session Handoff
 
-## System Architecture
+## Current State
 
-HeavyChat is a Django 5.1 ASGI application. Django templates render the UI; HTMX handles navigation and forms, while vanilla JavaScript `fetch()` reads the POST-based completion response incrementally. The browser renders Markdown with marked.js, sanitizes it with DOMPurify, and highlights code with highlight.js.
+Phases 1 through 6 are implemented on `main`:
 
-The `chat` app owns views and provider streaming. The `core` app owns profiles, memories, model catalog, chat sessions/messages, billing accounts, and usage records. SQLite is the local database. Credit changes go through transactional services and an append-only ledger; completed usage records retain token counts, request-time rates, cost, and credit debit. One credit is $0.01.
+1. Captured and documented the LiteChat OpenAI-compatible streaming contract and checked in the reference SSE fixture with provenance.
+2. Established the Django project, ASGI entry point, pinned dependencies, environment settings, SQLite development database, and pytest setup.
+3. Added profiles, memories, model catalog, billing accounts, an append-only credit ledger, chat sessions/messages, and immutable usage records.
+4. Implemented asynchronous provider streaming, context assembly, preflight credit reservation, token/cost settlement, and failure/disconnect cleanup.
+5. Built the responsive chat/profile UI, model selector, HTMX form/navigation flows, and browser `fetch()` streaming client.
+6. Added repeatable demo-user setup, final release documentation, and root-relative static URLs so local styles/scripts work from nested routes.
 
-The base template loads the app CSS/JavaScript from root-relative `/static/` URLs so assets resolve on nested routes as well as the home page. The UI uses component styles in `chat/static/chat/css/app.css`, with Tailwind CDN utilities available where used.
+## Stack and Architecture
+
+- Python 3.12+; the current environment is Python 3.12.3.
+- Django 5.1.x (`5.1.15`) with `heavychat.asgi:application` served by Uvicorn.
+- SQLite for local development. `core` owns domain/accounting models; `chat` owns pages and streaming integration.
+- Django templates and responsive, dark LiteChat-inspired shell. Tailwind CSS is available from its CDN; component layout and styling are in `chat/static/chat/css/app.css`, served with JavaScript at root-relative `/static/` URLs.
+- HTMX handles navigation and form/modal interactions. Vanilla JavaScript `fetch()` submits prompts and reads the POST SSE stream incrementally.
+- marked.js renders Markdown, DOMPurify sanitizes it, and highlight.js highlights code with a dark stylesheet.
 
 ## Provider Contract
 
-- OpenAI-compatible chat endpoint: `https://proxy.litechat.ai/openai/v1/chat/completions`.
-- Set `OPENAI_PROXY_KEY` in the ignored local `.env` file for live completions. The key is not needed to start the app or use local UI flows.
-- The server sends chat-completion requests and parses SSE `data:` events. It keeps `choices[0].delta.content` separate from `reasoning_content`, reads the usage-only event after `finish_reason`, and treats `[DONE]` as the successful stream terminator.
-- The browser receives user-facing content deltas, not reasoning. The server persists reasoning separately and settles credit usage from provider token counts when available.
-- The checked-in reference stream is `tests/fixtures/provider_stream.sse`; its supplied provenance and missing capture metadata are recorded in `doc/wiki/provider-contract.md`. Automated tests replay this fixture/mock streams and do not call the live provider.
+- Base URL: `https://proxy.litechat.ai/openai/v1`.
+- Request: `POST /openai/v1/chat/completions` (full URL: `https://proxy.litechat.ai/openai/v1/chat/completions`).
+- Set `OPENAI_PROXY_KEY` in local `.env` for live requests. It is not required to run the UI or tests and must never be committed.
+- The stream parser handles `choices[0].delta.content` independently from `reasoning_content`. Reasoning is stored separately and is not sent to the browser or mixed into conversation history.
+- Continue after the finish-reason event to read the final usage-only event (`prompt_tokens`, `completion_tokens`), then treat `[DONE]` as successful stream termination. If final usage is missing, token counts are estimated and recorded as estimated.
+- The checked-in capture is `tests/fixtures/provider_stream.sse`; its observed shape and provenance are in `doc/wiki/provider-contract.md`. Tests replay the capture or mock the SDK; they do not call the provider.
 
-## Model Tiers
+## Model Catalog
 
-The local `model_catalog` fixture contains these active models and user-supplied baseline rates. These rates are configuration and were not observed in the captured provider response.
+The active local catalog contains the following models and configured baseline USD rates per million tokens. Rates are user-supplied configuration, not pricing observed in the captured stream.
 
-| Tier | Model ID | Input / 1M tokens | Output / 1M tokens |
+| Tier | Model ID | Input / 1M | Output / 1M |
 | --- | --- | ---: | ---: |
 | Luna | `gpt-5.6-luna` | $0.15 | $0.60 |
 | Terra | `gpt-5.6-terra` | $0.50 | $2.00 |
 | Sol | `gpt-5.6-sol` | $2.50 | $10.00 |
 
-## Local Setup and Run
+## Accounting and Ledger
 
-From the repository root, create the environment and install dependencies:
+- One credit equals $0.01 USD. Usage cost is calculated from request-time Decimal rates, and credit debit is `ceil(cost_usd * 100)`.
+- Before contacting the provider, HeavyChat estimates request exposure and reserves `max(50 credits, estimated debit + 50 credits)`.
+- On a complete stream, the server reads final usage (or records an estimate) and atomically settles the reservation, assistant message, and immutable usage transaction.
+- Upstream errors, truncated streams, and client disconnects fail the assistant message and release/refund the reservation idempotently. A completed provider response that cannot be reconciled for insufficient funds retains its reservation/output for reconciliation rather than being treated as a failed, free call.
+- Credit deposits, reservations, settlements, and refunds are append-only `CreditLedger` entries with idempotency keys. SQLite tests do not establish multi-worker locking guarantees.
+
+## Frontend Features
+
+- Responsive dark workspace shell with sidebar chat/profile navigation, session history, current account/balance badge, and a mobile navigation drawer.
+- Model selector modal offers Cards and Compact layouts and selects a user-owned billing account.
+- Conversation view streams assistant content into the active message, auto-scrolls, and updates the balance after settlement. Reasoning remains hidden.
+- Profile page edits the global system prompt and memory opt-in/items; a mock `+500` credit top-up exercises the ledger without processing a payment.
+- Tailwind, HTMX, marked.js, highlight.js, and DOMPurify load from the base template head. App CSS/JS URLs use `/static/`, including on nested session and profile routes.
+
+## Demo Users
+
+Run `setup_demo` to provision both seeded users and their default profiles:
+
+| Username | Personal BillingAccount | Initial balance |
+| --- | --- | ---: |
+| `luis` | `[Personal] LUIS CLARENCE MARIANO` | 1,000 credits ($10.00) |
+| `beeheado` | `[Personal] beeheado` | 1,000 credits ($10.00) |
+
+Each initial balance is posted as a separate, idempotent `DEPOSIT`. Re-running setup does not repeat deposits or reset existing passwords. New users receive a generated local password printed once; alternatively set `HEAVYCHAT_DEMO_PASSWORD` before setup. `--reset-password` intentionally rotates `luis`'s password.
+
+## Setup, Verification, and Run
+
+Create the virtual environment, install dependencies, and prepare `.env` from the placeholder (keep real credentials local):
 
 ```sh
 python3 -m venv .venv
@@ -36,7 +76,7 @@ python3 -m venv .venv
 [ -f .env ] || cp .env.example .env
 ```
 
-Optionally set `OPENAI_PROXY_KEY` in `.env` to enable live completions. Then initialize the database and demo account:
+Initialize the database and demo users:
 
 ```sh
 .venv/bin/python manage.py migrate
@@ -44,19 +84,17 @@ Optionally set `OPENAI_PROXY_KEY` in `.env` to enable live completions. Then ini
 .venv/bin/python manage.py setup_demo
 ```
 
-Start the ASGI server:
+Run verification and start the ASGI development server:
 
 ```sh
+.venv/bin/python -m pytest -v
 .venv/bin/uvicorn heavychat.asgi:application --host 127.0.0.1 --port 8000 --reload
 ```
 
-Open `http://127.0.0.1:8000/` and sign in as `luis` or `beeheado`. On first setup, the command prints a generated local password once for each newly created user; alternatively set `HEAVYCHAT_DEMO_PASSWORD` before running it. Each user gets a separate personal account with 1,000 credits ($10.00) and a default profile. Stable ledger keys prevent the initial deposit from being added again on subsequent runs.
+The current suite contains 31 tests, including the static-asset regression test. Open `http://127.0.0.1:8000/` after setup. Live completions require a valid `OPENAI_PROXY_KEY`.
 
-Run the suite with `.venv/bin/python -m pytest`. The tests do not require a provider key or live network access.
+## Operational Limitations
 
-## Release Limitations
-
-- Django 5.1.15 is unsupported; upgrade to a supported Django release before production deployment.
-- SQLite is for local use and does not validate multi-worker ledger locking/concurrency. Validate billing against the intended production database before real usage.
-- Live provider availability and deployment proxy behavior are not tested. Configure streaming proxies to avoid buffering and allow long-lived responses.
-- Frontend libraries are loaded from CDNs; evaluate availability, CSP, and SRI for deployment.
+- Django 5.1.15 is unsupported; upgrade to a supported Django release before production.
+- SQLite is for local development and does not establish multi-worker ledger concurrency. Validate billing against the intended production database before real usage.
+- CDN/provider uptime, deployed SSE proxy behavior, CSP/SRI, and browser-level accessibility are not covered by the automated tests.

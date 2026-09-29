@@ -30,10 +30,6 @@
         <a class="nav-link {% if request.resolver_match.url_name == 'home' or request.resolver_match.url_name == 'session-detail' %}is-active{% endif %}" href="{% url 'chat:home' %}">
           <span class="nav-icon" aria-hidden="true">&#9671;</span><span>Chat</span><span class="nav-indicator"></span>
         </a>
-        <a class="nav-link {% if request.resolver_match.url_name == 'simgen' %}is-active{% endif %}" href="{% url 'chat:simgen' %}">
-          <span class="nav-icon" aria-hidden="true">&#10022;</span><span>SimGen</span><span class="nav-soon">SOON</span>
-        </a>
-
         <p class="nav-label nav-label-spaced">Account</p>
         <a class="nav-link {% if request.resolver_match.url_name == 'profile' %}is-active{% endif %}" href="{% url 'chat:profile' %}">
           <span class="nav-icon" aria-hidden="true">&#9675;</span><span>My Profile</span>

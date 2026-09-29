@@ -52,7 +52,7 @@ def test_home_renders_heavychat_navigation_and_empty_state(client):
 
     assert response.status_code == 200
     assert b"HeavyChat" in response.content
-    assert b"SimGen" in response.content
+    assert b"SimGen" not in response.content
     assert b"My Profile" in response.content
     assert b"Start a new chat" in response.content
     assert b"Make room" in response.content

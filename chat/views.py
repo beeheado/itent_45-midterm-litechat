@@ -98,11 +98,6 @@ def home(request):
 
 
 @login_required
-def simgen_placeholder(request):
-    return render(request, "chat/simgen.html", _shell_context(request))
-
-
-@login_required
 def session_detail(request, session_id: int):
     session = get_object_or_404(
         ChatSession.objects.select_related("billing_account", "model"),
