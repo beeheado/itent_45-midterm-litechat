@@ -6,6 +6,10 @@
 
 The Django endpoint is `POST /api/chat/sessions/<session_id>/completions/` with a JSON `content` string. It requires an authenticated session owner and an active selected model.
 
+### Phase 5 HTMX SSE Integration Gate
+
+The current completion endpoint accepts POST so the prompt can be submitted with the request body. Browser `EventSource`, which the HTMX SSE extension uses, only opens GET requests and cannot submit this body. Phase 5 must either add a POST preparation step that returns a one-time GET stream URL (persisting enough pending-generation state for the GET request), or revise the client requirement to use `fetch()` streaming. The Phase 4 endpoint should not be connected directly with `sse-connect` until this method mismatch is resolved.
+
 The parser consumes raw async response bytes and buffers line/event boundaries independently of network chunk boundaries. It accepts fixture-shaped `data:` JSON events, LF/CRLF, and multiple data lines; malformed JSON, upstream error events, and EOF without `[DONE]` fail the completion. It does not rely on every event containing a choice or text.
 
 ## Observed Event Contract

@@ -1,7 +1,7 @@
 # HeavyChat Streaming Plan
 
 - **Created:** 2026-09-29T06:23:50+00:00
-- **Updated:** 2026-09-29T07:00:13+00:00
+- **Updated:** 2026-09-29T07:13:36+00:00
 - **Study:** [`doc/study/004-streaming-service-study.md`](../study/004-streaming-service-study.md)
 - **Status:** Phase 4 complete and merged to `main`; awaiting Phase 5 review.
 - **Scope:** Async LiteChat transport, fixture-compatible SSE parser, context injection, streaming view, and credit/usage recovery. Do not build Phase 5 templates or browser UI.
@@ -48,4 +48,4 @@
 
 ## Stop Condition
 
-Complete Phase 4 only. Do not implement Phase 5 templates, model cards, profile/account pages, or frontend wiring. After tests, documentation sync, commit, and merge, halt for user review.
+Phase 4 is complete. Halt for user review before Phase 5. The Phase 5 HTMX SSE extension uses GET while the current streaming endpoint accepts POST; resolve the documented POST-preparation/GET-stream or fetch-streaming choice before wiring the frontend.

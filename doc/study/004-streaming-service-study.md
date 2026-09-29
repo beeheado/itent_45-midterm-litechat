@@ -1,7 +1,7 @@
 # HeavyChat Streaming Service Study
 
 - **Created:** 2026-09-29T06:22:59+00:00
-- **Updated:** 2026-09-29T06:32:45+00:00
+- **Updated:** 2026-09-29T07:13:36+00:00
 - **Status:** Study complete; Phase 4 execution is authorized by the user's request.
 - **Scope:** Async LiteChat completion transport, fixture-shaped SSE parsing, prompt/context assembly, ASGI browser streaming, and credit/message recovery.
 
@@ -49,6 +49,10 @@ On clean `[DONE]`, finalize the assistant content/reasoning, token counts, usage
 SSE event payloads must be JSON-encoded to prevent control characters in model output from injecting event framing. Configure `Cache-Control: no-cache` and disable reverse-proxy buffering for the route. Django's response behavior does not prove production proxy buffering/timeouts; keep that an operations verification item.
 
 ## Tests and Implementation Decision
+
+### Phase 5 HTMX SSE Integration Gate
+
+The current stream route accepts POST with the user prompt in its JSON body. The HTMX SSE extension uses browser `EventSource`, which only issues GET requests and cannot submit that body. Phase 4 keeps the POST streaming contract. Before Phase 5 connects `sse-connect` directly to this endpoint, resolve the mismatch. The recommended design is a POST preparation endpoint that creates the user/pending assistant messages and reservation, returns a one-time GET stream URL, and persists the reservation/rate snapshot needed for that GET request. Do not put the prompt or secrets in the URL. An alternative is to revise the Phase 5 client requirement to use `fetch()` streaming instead of the SSE extension.
 
 Use the captured raw fixture to test parsing without external calls. Mock the SDK raw byte stream for async end-to-end view tests, and assert content delivery, separate reasoning persistence, usage settlement and balance events, 402 preflight behavior, and release on upstream failure/disconnect. Preserve a safe test DB boundary with pytest-django.
 
