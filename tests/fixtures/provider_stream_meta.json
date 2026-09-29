@@ -1,0 +1,18 @@
+{
+  "capture_client": {
+    "python_version": "3.12.3",
+    "transport": "urllib.request"
+  },
+  "capture_status": "failed",
+  "captured_at_utc": "2026-09-29T05:15:00.680841+00:00",
+  "endpoint": "https://proxy.litechat.ai/v1/models",
+  "method": "GET",
+  "model": null,
+  "sanitized_headers": {
+    "content-type": "text/plain; charset=utf-8",
+    "date": "Tue, 29 Sep 2026 05:15:00 GMT",
+    "x-request-id": "req_u34MlSunYED7xBkIZeiPwWCuTt47TEY6MHVKHrtjeW4"
+  },
+  "status": 404,
+  "stream_fixture_written": false
+}
