@@ -1,9 +1,9 @@
 # HeavyChat Frontend UI Plan
 
 - **Created:** 2026-09-29T07:38:54+00:00
-- **Updated:** 2026-09-29T07:59:27+00:00
+- **Updated:** 2026-09-29T08:02:17+00:00
 - **Study:** [`doc/study/005-frontend-ui-study.md`](../study/005-frontend-ui-study.md)
-- **Status:** Implementation and verification complete; commit/merge pending.
+- **Status:** Phase 5 complete and merged to `main`; awaiting Phase 6 approval.
 - **Scope:** Server-rendered shell and pages, HTMX fragment interactions, a secure fetch-based SSE client, and view/template tests. Do not change ledger semantics or start Phase 6.
 
 ## Execution Checklist
@@ -33,7 +33,7 @@
 - [x] Run `.venv/bin/python -m pytest` and `.venv/bin/python manage.py check` from the project environment.
 - [x] Update `doc/wiki/frontend-ui.md` with routes, shell/template composition, CSRF/ownership rules, fetch SSE event flow, XSS controls, and local setup.
 - [x] Review the staged diff and ensure `.env`, SQLite data, generated caches, and unrelated untracked files are excluded.
-- [ ] Commit with `feat: build heavychat ui with fetch sse streaming, profile, and model modal` and merge into `main` only after verification passes.
+- [x] Commit with `feat: build heavychat ui with fetch sse streaming, profile, and model modal` and merge into `main` only after verification passes.
 
 ## Verification Record
 
@@ -42,6 +42,7 @@
 - JavaScript syntax check (`node --check chat/static/chat/js/app.js`): passed.
 - Migrations are current and `pip check` reports no broken requirements.
 - Tests use local fixtures/mocks; no live provider call or payment processor was invoked.
+- Feature commit `8bf5222` was fast-forward merged into `main`.
 
 ## Stop Condition
 
