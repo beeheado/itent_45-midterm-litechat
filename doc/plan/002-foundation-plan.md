@@ -1,9 +1,9 @@
 # HeavyChat Foundation Plan
 
 - **Created:** 2026-09-29T05:38:23+00:00
-- **Updated:** 2026-09-29T05:43:12+00:00
+- **Updated:** 2026-09-29T05:44:21+00:00
 - **Study:** [`doc/study/002-foundation-study.md`](../study/002-foundation-study.md)
-- **Status:** Implementation and verification complete; commit/merge pending.
+- **Status:** Phase 2 complete and merged to `main`; awaiting Phase 3 approval.
 - **Scope:** Bootstrap the Django/ASGI foundation, dotenv settings, exact direct-dependency pins, pytest smoke test, and living architecture documentation. Do not implement chat/domain application behavior in this phase.
 
 ## Execution Checklist
@@ -28,7 +28,7 @@
 - [x] Run `python manage.py check` and confirm the ASGI application imports. Record that the check does not validate an external LiteChat request or production SSE deployment.
 - [x] Update `doc/wiki/architecture.md` with project layout, pinned versions, environment settings, local ASGI command, SQLite scope, and the unsupported Django 5.1 production risk.
 - [x] Review the staged diff and verify `.env`, SQLite data, and generated caches are not committed.
-- [ ] Commit with `feat: initialize django 5 asgi project and test harness` and merge into `main` only after tests and system checks pass.
+- [x] Commit with `feat: initialize django 5 asgi project and test harness` and merge into `main` only after tests and system checks pass.
 
 ## Verification Record
 
@@ -37,6 +37,7 @@
 - `pip check`: no broken requirements.
 - ASGI application import and production-mode missing-`SECRET_KEY` guard: passed.
 - `.env`, `.venv/`, `db.sqlite3`, and generated Python caches are excluded from the commit.
+- Feature commit `2ae5445` was fast-forward merged into `main`.
 
 ## Stop Condition
 
