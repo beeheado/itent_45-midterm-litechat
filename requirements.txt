@@ -1,0 +1,7 @@
+Django==5.1.15
+openai==3.20.0
+pytest==9.1.1
+pytest-django==4.14.0
+python-dotenv==1.2.3
+tiktoken==0.14.0
+uvicorn==0.54.0
