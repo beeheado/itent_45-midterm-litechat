@@ -1,9 +1,9 @@
 # HeavyChat Streaming Plan
 
 - **Created:** 2026-09-29T06:23:50+00:00
-- **Updated:** 2026-09-29T06:55:13+00:00
+- **Updated:** 2026-09-29T07:00:13+00:00
 - **Study:** [`doc/study/004-streaming-service-study.md`](../study/004-streaming-service-study.md)
-- **Status:** Implementation and verification complete; commit/merge pending.
+- **Status:** Phase 4 complete and merged to `main`; awaiting Phase 5 review.
 - **Scope:** Async LiteChat transport, fixture-compatible SSE parser, context injection, streaming view, and credit/usage recovery. Do not build Phase 5 templates or browser UI.
 
 ## Execution Checklist
@@ -36,7 +36,7 @@
 - [x] Run `.venv/bin/python -m pytest`, `.venv/bin/python manage.py check`, and `makemigrations --check --dry-run`; verify no live provider call is needed for tests.
 - [x] Update `doc/wiki/streaming-architecture.md` with the parser contract, context precedence, SSE event format, reserve/settle/release behavior, fallback usage estimation, and SQLite/deployment caveats.
 - [x] Review the staged diff and ensure `.env`, SQLite data, and unrelated user files are excluded.
-- [ ] Commit with `feat: implement async sse proxy streaming and usage settlement` and merge into `main` only after verification passes.
+- [x] Commit with `feat: implement async sse proxy streaming and usage settlement` and merge into `main` only after verification passes.
 
 ## Verification Record
 
@@ -44,6 +44,7 @@
 - `.venv/bin/python manage.py check`: no issues.
 - `makemigrations --check --dry-run`: no changes detected.
 - Streaming tests replay the captured fixture and mock the SDK raw response; no live provider request was made.
+- Feature commit `ca5b819` was fast-forward merged into `main`.
 
 ## Stop Condition
 
