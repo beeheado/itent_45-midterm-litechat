@@ -6,12 +6,12 @@
   <header class="conversation-heading">
     <div>
       <p class="eyebrow"><span class="eyebrow-line"></span> {{ session.model.tier|upper }} MODEL</p>
-      <h1>{{ session.title|default:session.model.display_name }}</h1>
+      <h1 class="text-white">{{ session.title|default:session.model.display_name }}</h1>
     </div>
     <div class="conversation-model-chip"><span class="model-chip-dot"></span>{{ session.model.display_name }}</div>
   </header>
 
-  <div class="message-feed" id="message-feed" role="log" aria-live="polite" aria-relevant="additions text">
+  <div class="message-feed min-h-0 overflow-y-auto" id="message-feed" data-message-feed role="log" aria-live="polite" aria-relevant="additions text">
     {% for message in messages %}
       {% include "chat/partials/message.html" %}
     {% empty %}
@@ -23,7 +23,7 @@
     {% endfor %}
   </div>
 
-  <div class="chat-composer-wrap">
+  <div class="chat-composer-wrap sticky bottom-0">
     <form class="chat-composer" data-chat-form data-stream-url="{% url 'chat:stream-completion' session.pk %}">
       {% csrf_token %}
       <label class="sr-only" for="chat-input">Message HeavyChat</label>

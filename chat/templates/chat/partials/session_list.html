@@ -1,5 +1,5 @@
 {% for item in sessions %}
-  <a class="session-link {% if active_session and item.pk == active_session.pk %}is-current{% endif %}"
+  <a class="session-link transition-colors hover:bg-slate-800 {% if active_session and item.pk == active_session.pk %}is-current{% endif %}"
      href="{% url 'chat:session-detail' item.pk %}"
      title="{{ item.title|default:item.model.display_name }}">
     <span class="session-status-dot" aria-hidden="true"></span>

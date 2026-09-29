@@ -1,6 +1,6 @@
 {% load static %}
 <!doctype html>
-<html lang="en" class="h-full">
+<html lang="en" class="h-full bg-slate-900">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -15,10 +15,10 @@
   <script defer src="https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/lib/common.min.js"></script>
   <script defer src="{% static 'chat/js/app.js' %}"></script>
 </head>
-<body>
-  <div class="app-shell">
+<body class="bg-slate-900 text-slate-200 antialiased">
+  <div class="app-shell min-h-screen text-slate-200">
     <div class="mobile-scrim" data-sidebar-scrim></div>
-    <aside class="sidebar" id="app-sidebar" aria-label="Primary navigation">
+    <aside class="sidebar bg-slate-900/95" id="app-sidebar" aria-label="Primary navigation">
       <a class="brand-lockup" href="{% url 'chat:home' %}">
         <span class="brand-mark" aria-hidden="true">H</span>
         <span class="brand-name">Heavy<span>Chat</span></span>
@@ -27,11 +27,11 @@
 
       <nav class="sidebar-nav" aria-label="Workspace">
         <p class="nav-label">Apps</p>
-        <a class="nav-link {% if request.resolver_match.url_name == 'home' or request.resolver_match.url_name == 'session-detail' %}is-active{% endif %}" href="{% url 'chat:home' %}">
+        <a class="nav-link transition-colors hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 {% if request.resolver_match.url_name == 'home' or request.resolver_match.url_name == 'session-detail' %}is-active{% endif %}" href="{% url 'chat:home' %}">
           <span class="nav-icon" aria-hidden="true">&#9671;</span><span>Chat</span><span class="nav-indicator"></span>
         </a>
         <p class="nav-label nav-label-spaced">Account</p>
-        <a class="nav-link {% if request.resolver_match.url_name == 'profile' %}is-active{% endif %}" href="{% url 'chat:profile' %}">
+        <a class="nav-link transition-colors hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 {% if request.resolver_match.url_name == 'profile' %}is-active{% endif %}" href="{% url 'chat:profile' %}">
           <span class="nav-icon" aria-hidden="true">&#9675;</span><span>My Profile</span>
         </a>
 
@@ -61,7 +61,7 @@
     </aside>
 
     <div class="main-column">
-      <header class="topbar">
+      <header class="topbar border-b border-slate-700/80">
         <button class="mobile-menu-button" type="button" aria-label="Open navigation" aria-expanded="false" data-sidebar-toggle>
           <span></span><span></span><span></span>
         </button>

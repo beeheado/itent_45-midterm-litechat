@@ -1,7 +1,7 @@
 <form method="post" action="{% url 'chat:toggle-memories' %}"
       hx-post="{% url 'chat:toggle-memories' %}" hx-trigger="change" hx-target="#memory-toggle" hx-swap="innerHTML">
   {% csrf_token %}
-  <label class="memory-toggle-label" for="ai-memories-enabled">
+  <label class="memory-toggle-label rounded-xl border border-slate-700 bg-slate-900" for="ai-memories-enabled">
     <span><strong>Generate AI Memories</strong><small>Include active memory items in future prompts.</small></span>
     <span class="switch-wrap"><input id="ai-memories-enabled" type="checkbox" name="ai_memories_enabled" {% if user_profile.ai_memories_enabled %}checked{% endif %}><span class="switch-track"></span></span>
   </label>

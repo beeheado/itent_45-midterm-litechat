@@ -9,15 +9,15 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="{% static 'chat/css/app.css' %}">
 </head>
-<body class="auth-body">
+<body class="auth-body bg-slate-900 text-slate-200 antialiased">
   <main class="auth-layout">
-    <section class="auth-card" aria-labelledby="login-title">
+    <section class="auth-card rounded-xl border border-slate-700 bg-slate-800 shadow-2xl" aria-labelledby="login-title">
       <a class="auth-brand" href="/" aria-label="HeavyChat home">
         <span class="auth-brand-mark" aria-hidden="true">H</span>
         <span>HeavyChat</span>
       </a>
-      <h1 id="login-title">Welcome back.</h1>
-      <p class="auth-intro">Sign in to open your private workspace.</p>
+      <h1 class="text-white">Welcome back.</h1>
+      <p class="auth-intro text-slate-300">Sign in to open your private workspace.</p>
 
       <form class="auth-form" method="post" action="{% url 'login' %}">
         {% csrf_token %}

@@ -16,7 +16,7 @@ Phases 1 through 6 are implemented on `main`:
 - Python 3.12+; the current environment is Python 3.12.3.
 - Django 5.1.x (`5.1.15`) with `heavychat.asgi:application` served by Uvicorn.
 - SQLite for local development. `core` owns domain/accounting models; `chat` owns pages and streaming integration.
-- Django templates and responsive, dark LiteChat-inspired shell. Tailwind CSS is available from its CDN; component layout and styling are in `chat/static/chat/css/app.css`, served with JavaScript at root-relative `/static/` URLs.
+- Django templates and a responsive slate-neutral dark shell. Tailwind CSS utilities are loaded from its CDN, with the shared design tokens and component styling in `chat/static/chat/css/app.css`; app CSS/JavaScript use root-relative `/static/` URLs.
 - HTMX handles navigation and form/modal interactions. Vanilla JavaScript `fetch()` submits prompts and reads the POST SSE stream incrementally.
 - marked.js renders Markdown, DOMPurify sanitizes it, and highlight.js highlights code with a dark stylesheet.
 
@@ -49,9 +49,9 @@ The active local catalog contains the following models and configured baseline U
 
 ## Frontend Features
 
-- Responsive dark workspace shell with sidebar chat/profile navigation, session history, current account/balance badge, and a mobile navigation drawer.
+- Responsive slate-neutral workspace shell with spaced sidebar chat/profile navigation, session history, emerald account/balance pill, and a mobile navigation drawer.
 - Model selector modal offers Cards and Compact layouts and selects a user-owned billing account.
-- Conversation view streams assistant content into the active message, auto-scrolls, and updates the balance after settlement. Reasoning remains hidden.
+- Conversation view uses indigo right-aligned user bubbles, centered readable assistant messages, styled Markdown/code blocks, and a bottom-pinned composer. It streams into the active message, auto-scrolls, and updates the balance after settlement. Reasoning remains hidden.
 - Profile page edits the global system prompt and memory opt-in/items; a mock `+500` credit top-up exercises the ledger without processing a payment.
 - Tailwind, HTMX, marked.js, highlight.js, and DOMPurify load from the base template head. App CSS/JS URLs use `/static/`, including on nested session and profile routes.
 

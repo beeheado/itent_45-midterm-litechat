@@ -1,5 +1,5 @@
 <div class="modal-scrim" data-modal-scrim>
-  <section class="model-dialog" role="dialog" aria-modal="true" aria-labelledby="model-dialog-title">
+  <section class="model-dialog rounded-xl border border-slate-700 bg-slate-900 shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="model-dialog-title">
     <header class="model-dialog-header">
       <div>
         <p class="eyebrow"><span class="eyebrow-line"></span> NEW SESSION</p>
@@ -16,7 +16,7 @@
       <div class="selector-controls">
         <label class="account-picker">
           <span>Billing account</span>
-          <select name="billing_account_id" required>
+          <select class="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500" name="billing_account_id" required>
             {% for account in billing_accounts %}
               <option value="{{ account.pk }}" {% if account.pk == current_account.pk %}selected{% endif %}>{{ account.name }}</option>
             {% endfor %}
@@ -32,12 +32,12 @@
       <div class="model-provider-heading"><span class="provider-glyph" aria-hidden="true">◈</span><span>OpenAI</span><span class="provider-line"></span><span class="provider-count">{{ model_cards|length }} MODELS</span></div>
       <div class="model-grid" data-model-grid data-layout="cards">
         {% for card in model_cards %}
-          <article class="model-card model-card-{{ card.model.tier|lower }}">
+          <article class="model-card rounded-xl border border-slate-700 bg-slate-800 model-card-{{ card.model.tier|lower }}">
             <div class="model-card-top"><span class="tier-badge">{{ card.badge }}</span><span class="model-card-tier">{{ card.model.tier }}</span></div>
             <h3>{{ card.model.display_name }}</h3>
             <p>{{ card.description }}</p>
             <div class="model-cost"><span>INPUT <b>${{ card.model.input_rate_per_million|floatformat:2 }}</b> / 1M</span><span>OUTPUT <b>${{ card.model.output_rate_per_million|floatformat:2 }}</b> / 1M</span></div>
-            <button type="submit" class="model-select-button" name="model_id" value="{{ card.model.pk }}">
+            <button type="submit" class="model-select-button focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400" name="model_id" value="{{ card.model.pk }}">
               <span>Select model</span><span aria-hidden="true">&#8594;</span>
             </button>
           </article>

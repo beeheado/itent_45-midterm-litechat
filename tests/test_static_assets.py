@@ -13,6 +13,8 @@ def test_nested_page_uses_root_static_urls_and_loads_frontend_cdns(client):
     assert response.status_code == 200
     assert b'href="/static/chat/css/app.css"' in response.content
     assert b'src="/static/chat/js/app.js"' in response.content
+    assert b"bg-slate-900 text-slate-200 antialiased" in response.content
+    assert b"rounded-xl border border-slate-700 bg-slate-800" in response.content
     assert b"https://cdn.tailwindcss.com" in response.content
     assert b"marked@15.0.12/marked.min.js" in response.content
     assert b"highlight.js@11.11.1/styles/github-dark.min.css" in response.content

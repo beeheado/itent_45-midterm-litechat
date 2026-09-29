@@ -4,12 +4,12 @@
 
 The Phase 5 UI uses Django templates and app static assets under `chat/templates/chat/` and `chat/static/chat/`.
 
-The base template loads Tailwind, HTMX, marked.js, DOMPurify, and highlight.js from pinned CDN URLs in `<head>`. The dark highlight.js theme and local `app.css` are loaded there as well. Django's root-relative `STATIC_URL = "/static/"` keeps the local CSS and JavaScript paths valid from nested session/profile routes. The component class names below are styled by `app.css`; Tailwind utilities are used only where present in the markup.
+The shared UI uses a slate-neutral palette (`#0f172a` page, slate-800 panels, slate-700 borders), off-white reading text, muted slate metadata, emerald balance accents, and indigo user bubbles. Tailwind utilities are loaded from the CDN; `app.css` supplies responsive component rules and design tokens. The base/login templates load HTMX, marked.js, DOMPurify, highlight.js, and its dark theme from pinned CDN URLs. Django's root-relative `STATIC_URL = "/static/"` keeps local CSS and JavaScript valid from nested routes.
 
 - `base.html` provides the responsive dark workspace shell, HeavyChat branding, Chat/SimGen/Profile navigation, session list, and the current BillingAccount/credits/USD badge.
 - `home.html` is the no-session landing page. The `+` and primary action load the model selector using HTMX.
 - `partials/model_selector.html` provides an account selector, cost caption, Cards/Compact toggle, and active OpenAI Luna/Terra/Sol cards. Session creation validates account ownership and model activity on the server before redirecting.
-- `session.html` renders completed messages and a composer. User-visible assistant content is rendered as Markdown; `reasoning_content` is never rendered.
+- `session.html` renders completed messages in a scrollable feed and anchors the composer at the bottom. User messages align right; assistant content uses a centered readable width and styled Markdown/code blocks. `reasoning_content` is never rendered.
 - `profile.html` edits the global prompt, AI memory opt-in, memory records, and an explicit mock +500-credit top-up.
 - `simgen.html` is a placeholder only; no simulation behavior is implemented.
 

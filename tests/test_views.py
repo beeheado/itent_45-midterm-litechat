@@ -89,6 +89,7 @@ def test_session_page_renders_conversation_without_reasoning(client):
     assert b"Here is a response." in response.content
     assert b"Private reasoning text" not in response.content
     assert b"data-stream-url" in response.content
+    assert b"data-message-feed" in response.content
     assert b"EventSource" not in response.content
 
 
