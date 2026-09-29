@@ -1,9 +1,9 @@
 # HeavyChat Domain Models Plan
 
 - **Created:** 2026-09-29T05:52:39+00:00
-- **Updated:** 2026-09-29T06:13:01+00:00
+- **Updated:** 2026-09-29T06:14:13+00:00
 - **Study:** [`doc/study/003-domain-models-study.md`](../study/003-domain-models-study.md)
-- **Status:** Implementation and verification complete; commit/merge pending.
+- **Status:** Phase 3 complete and merged to `main`; awaiting Phase 4 review/approval.
 - **Scope:** Add the `core` relational domain, model migrations, catalog fixture, deterministic Decimal pricing, and atomic credit-ledger services/tests. Do not add chat views, templates, provider calls, or SSE parsing.
 
 ## Execution Checklist
@@ -38,7 +38,7 @@
 - [x] Run migrations, load the catalog fixture for local use, run `python3 -m pytest`, and run `python3 manage.py check` from the project virtual environment.
 - [x] Update `doc/wiki/domain-models.md` with relationships, units, idempotency semantics, settlement math, fixture rate caveat, and SQLite concurrency limitations.
 - [x] Review the staged diff and verify `.env`, SQLite data, generated caches, and unrelated untracked files are not committed.
-- [ ] Commit with `feat: implement billing accounts, credit ledger, and domain models` and merge into `main` only after verification passes.
+- [x] Commit with `feat: implement billing accounts, credit ledger, and domain models` and merge into `main` only after verification passes.
 
 ## Verification Record
 
@@ -48,6 +48,7 @@
 - `pip check`: no broken requirements.
 - Applied migrations `0001_initial` and `0002_usagetransaction_reservation`, then loaded `model_catalog` in the ignored development SQLite database.
 - The Luna fixture remains inactive with placeholder zero rates pending verified pricing.
+- Feature commit `1c92068` was fast-forward merged into `main`.
 
 ## Stop Condition
 
