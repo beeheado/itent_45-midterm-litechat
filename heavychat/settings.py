@@ -48,6 +48,8 @@ OPENAI_PROXY_KEY = os.getenv("OPENAI_PROXY_KEY", "")
 LITECHAT_PROXY_BASE_URL = (
     os.getenv("LITECHAT_PROXY_BASE_URL") or "https://proxy.litechat.ai/openai/v1"
 ).strip().rstrip("/")
+if LITECHAT_PROXY_BASE_URL == "https://proxy.litechat.ai/v1":
+    LITECHAT_PROXY_BASE_URL = "https://proxy.litechat.ai/openai/v1"
 
 ALLOWED_HOSTS = [
     host.strip()
@@ -61,6 +63,7 @@ ALLOWED_HOSTS = [
 # Application definition
 
 INSTALLED_APPS = [
+    "chat.apps.ChatConfig",
     "core.apps.CoreConfig",
     'django.contrib.admin',
     'django.contrib.auth',

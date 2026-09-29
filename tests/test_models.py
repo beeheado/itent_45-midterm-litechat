@@ -37,16 +37,27 @@ def test_user_profile_and_memory_item_associations():
 
 
 @pytest.mark.django_db
-def test_model_catalog_fixture_has_unpriced_luna_placeholder():
+def test_model_catalog_fixture_contains_all_active_tiers():
     call_command("loaddata", "model_catalog", verbosity=0)
 
-    model = ModelCatalog.objects.get(model_id="gpt-5.6-luna")
-    assert model.display_name == "GPT-5.6 Luna"
-    assert model.tier == ModelCatalog.Tier.LUNA
-    assert model.provider == ModelCatalog.Provider.OPENAI
-    assert model.input_rate_per_million == 0
-    assert model.output_rate_per_million == 0
-    assert model.is_active is False
+    models = {
+        model.model_id: model
+        for model in ModelCatalog.objects.filter(is_active=True)
+    }
+    assert set(models) == {
+        "gpt-5.6-luna",
+        "gpt-5.6-terra",
+        "gpt-5.6-sol",
+    }
+    assert models["gpt-5.6-luna"].display_name == "GPT-5.6 Luna"
+    assert models["gpt-5.6-luna"].tier == ModelCatalog.Tier.LUNA
+    assert models["gpt-5.6-luna"].provider == ModelCatalog.Provider.OPENAI
+    assert models["gpt-5.6-luna"].input_rate_per_million == Decimal("0.150000")
+    assert models["gpt-5.6-luna"].output_rate_per_million == Decimal("0.600000")
+    assert models["gpt-5.6-terra"].input_rate_per_million == Decimal("0.500000")
+    assert models["gpt-5.6-terra"].output_rate_per_million == Decimal("2.000000")
+    assert models["gpt-5.6-sol"].input_rate_per_million == Decimal("2.500000")
+    assert models["gpt-5.6-sol"].output_rate_per_million == Decimal("10.000000")
 
 
 @pytest.mark.django_db

@@ -7,9 +7,35 @@
       "display_name": "GPT-5.6 Luna",
       "tier": "Luna",
       "provider": "openai",
-      "input_rate_per_million": "0.000000",
-      "output_rate_per_million": "0.000000",
-      "is_active": false
+      "input_rate_per_million": "0.150000",
+      "output_rate_per_million": "0.600000",
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.modelcatalog",
+    "pk": 2,
+    "fields": {
+      "model_id": "gpt-5.6-terra",
+      "display_name": "GPT-5.6 Terra",
+      "tier": "Terra",
+      "provider": "openai",
+      "input_rate_per_million": "0.500000",
+      "output_rate_per_million": "2.000000",
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.modelcatalog",
+    "pk": 3,
+    "fields": {
+      "model_id": "gpt-5.6-sol",
+      "display_name": "GPT-5.6 Sol",
+      "tier": "Sol",
+      "provider": "openai",
+      "input_rate_per_million": "2.500000",
+      "output_rate_per_million": "10.000000",
+      "is_active": true
     }
   }
 ]

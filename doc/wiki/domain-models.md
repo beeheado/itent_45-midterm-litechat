@@ -39,7 +39,7 @@ If `r` credits were reserved and actual use costs `d`, the settlement adjustment
 
 ## Catalog Fixture
 
-`core/fixtures/model_catalog.json` provides `gpt-5.6-luna` with the requested Luna/OpenAI display identity. No authoritative rates were supplied, so the fixture's zero rates are explicitly placeholders and `is_active` is false. Do not activate or offer this record until real pricing is supplied. Load it for a local development database with:
+`core/fixtures/model_catalog.json` seeds the three user-supplied active tier baselines: Luna (`gpt-5.6-luna`, $0.15/$0.60 per million), Terra (`gpt-5.6-terra`, $0.50/$2.00), and Sol (`gpt-5.6-sol`, $2.50/$10.00). These prices are supplied configuration and were not observed in the provider SSE response. Load the catalog for a local development database with:
 
 ```sh
 .venv/bin/python manage.py loaddata model_catalog

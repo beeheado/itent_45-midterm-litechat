@@ -30,6 +30,7 @@ class MemoryItem(models.Model):
     )
     category = models.CharField(max_length=20, choices=Category.choices)
     content = models.TextField()
+    is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -209,6 +210,11 @@ class ChatMessage(models.Model):
         USER = "user", "User"
         ASSISTANT = "assistant", "Assistant"
 
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending"
+        COMPLETE = "complete", "Complete"
+        FAILED = "failed", "Failed"
+
     session = models.ForeignKey(
         ChatSession,
         on_delete=models.CASCADE,
@@ -217,6 +223,11 @@ class ChatMessage(models.Model):
     role = models.CharField(max_length=16, choices=Role.choices)
     content = models.TextField()
     reasoning_content = models.TextField(null=True, blank=True)
+    status = models.CharField(
+        max_length=16,
+        choices=Status.choices,
+        default=Status.COMPLETE,
+    )
     prompt_tokens = models.IntegerField(default=0)
     completion_tokens = models.IntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
