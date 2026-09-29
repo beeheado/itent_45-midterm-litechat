@@ -1,0 +1,12 @@
+<article class="message-row message-{{ message.role }}" data-message-row data-role="{{ message.role }}">
+  {% if message.role == "assistant" %}
+    <div class="assistant-mark" aria-hidden="true">H</div>
+  {% endif %}
+  <div class="message-column">
+    <div class="message-meta">
+      <span>{% if message.role == "assistant" %}HeavyChat{% elif message.role == "user" %}You{% else %}System{% endif %}</span>
+      <time>{{ message.created_at|date:"H:i" }}</time>
+    </div>
+    <div class="message-bubble {% if message.role == 'assistant' %}markdown-body{% else %}plain-message{% endif %}" {% if message.role == "assistant" %}data-markdown-source{% endif %}>{{ message.content }}</div>
+  </div>
+</article>

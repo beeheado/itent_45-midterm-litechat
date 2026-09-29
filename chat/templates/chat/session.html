@@ -1,0 +1,41 @@
+{% extends "chat/base.html" %}
+{% block title %}{{ session.title|default:session.model.display_name }} · HeavyChat{% endblock %}
+{% block page_context %}{{ session.title|default:session.model.display_name }}{% endblock %}
+{% block content %}
+<section class="conversation-page" data-conversation-page>
+  <header class="conversation-heading">
+    <div>
+      <p class="eyebrow"><span class="eyebrow-line"></span> {{ session.model.tier|upper }} MODEL</p>
+      <h1>{{ session.title|default:session.model.display_name }}</h1>
+    </div>
+    <div class="conversation-model-chip"><span class="model-chip-dot"></span>{{ session.model.display_name }}</div>
+  </header>
+
+  <div class="message-feed" id="message-feed" role="log" aria-live="polite" aria-relevant="additions text">
+    {% for message in messages %}
+      {% include "chat/partials/message.html" %}
+    {% empty %}
+      <div class="conversation-empty" data-empty-state>
+        <span class="empty-orbit" aria-hidden="true">H</span>
+        <h2>Where should we begin?</h2>
+        <p>Share a question, a rough draft, or the shape of a problem.</p>
+      </div>
+    {% endfor %}
+  </div>
+
+  <div class="chat-composer-wrap">
+    <form class="chat-composer" data-chat-form data-stream-url="{% url 'chat:stream-completion' session.pk %}">
+      {% csrf_token %}
+      <label class="sr-only" for="chat-input">Message HeavyChat</label>
+      <textarea id="chat-input" name="content" rows="1" maxlength="100000" placeholder="Ask HeavyChat anything..." data-chat-input></textarea>
+      <div class="composer-footer">
+        <span class="composer-hint"><kbd>Enter</kbd> to send <span>·</span> <kbd>Shift + Enter</kbd> for a new line</span>
+        <button type="submit" class="send-button" data-send-button>
+          <span data-send-label>Send message</span><span class="send-arrow" aria-hidden="true">&#8593;</span>
+        </button>
+      </div>
+    </form>
+    <p class="composer-status" data-chat-status aria-live="polite">Responses can be imperfect. Verify important details.</p>
+  </div>
+</section>
+{% endblock %}

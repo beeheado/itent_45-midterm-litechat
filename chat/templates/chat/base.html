@@ -1,0 +1,87 @@
+{% load static %}
+<!doctype html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>{% block title %}HeavyChat{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/styles/github-dark.min.css">
+  <link rel="stylesheet" href="{% static 'chat/css/app.css' %}">
+  <script defer src="https://unpkg.com/htmx.org@2.0.8/dist/htmx.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/marked@15.0.12/marked.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/dompurify@3.2.6/dist/purify.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/lib/common.min.js"></script>
+  <script defer src="{% static 'chat/js/app.js' %}"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <div class="mobile-scrim" data-sidebar-scrim></div>
+    <aside class="sidebar" id="app-sidebar" aria-label="Primary navigation">
+      <a class="brand-lockup" href="{% url 'chat:home' %}">
+        <span class="brand-mark" aria-hidden="true">H</span>
+        <span class="brand-name">Heavy<span>Chat</span></span>
+        <span class="brand-edition">WORKSPACE</span>
+      </a>
+
+      <nav class="sidebar-nav" aria-label="Workspace">
+        <p class="nav-label">Apps</p>
+        <a class="nav-link {% if request.resolver_match.url_name == 'home' or request.resolver_match.url_name == 'session-detail' %}is-active{% endif %}" href="{% url 'chat:home' %}">
+          <span class="nav-icon" aria-hidden="true">&#9671;</span><span>Chat</span><span class="nav-indicator"></span>
+        </a>
+        <a class="nav-link {% if request.resolver_match.url_name == 'simgen' %}is-active{% endif %}" href="{% url 'chat:simgen' %}">
+          <span class="nav-icon" aria-hidden="true">&#10022;</span><span>SimGen</span><span class="nav-soon">SOON</span>
+        </a>
+
+        <p class="nav-label nav-label-spaced">Account</p>
+        <a class="nav-link {% if request.resolver_match.url_name == 'profile' %}is-active{% endif %}" href="{% url 'chat:profile' %}">
+          <span class="nav-icon" aria-hidden="true">&#9675;</span><span>My Profile</span>
+        </a>
+
+        <div class="sessions-heading">
+          <p class="nav-label">Sessions</p>
+          <button class="icon-button new-session-button"
+                  type="button"
+                  aria-label="Start a new chat"
+                  title="New chat"
+                  hx-get="{% url 'chat:model-selector' %}"
+                  hx-target="#model-modal-host"
+                  hx-swap="innerHTML">+</button>
+        </div>
+        <div class="session-list" id="sidebar-sessions">
+          {% include "chat/partials/session_list.html" %}
+        </div>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-user-avatar" aria-hidden="true">{{ display_name|slice:":1"|upper }}</div>
+        <div class="sidebar-user-copy">
+          <strong>{{ display_name }}</strong>
+          <span>@{{ request.user.username }}</span>
+        </div>
+        <a class="sidebar-profile-link" href="{% url 'chat:profile' %}" aria-label="Open profile">&#8599;</a>
+      </div>
+    </aside>
+
+    <div class="main-column">
+      <header class="topbar">
+        <button class="mobile-menu-button" type="button" aria-label="Open navigation" aria-expanded="false" data-sidebar-toggle>
+          <span></span><span></span><span></span>
+        </button>
+        <div class="topbar-context">
+          <span class="topbar-kicker">PRIVATE WORKSPACE</span>
+          <span class="topbar-divider">/</span>
+          <span>{% block page_context %}Chat{% endblock %}</span>
+        </div>
+        {% include "chat/partials/balance_badge.html" %}
+      </header>
+
+      <main class="page-content" id="main-content">
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </div>
+  <div id="model-modal-host"></div>
+</body>
+</html>

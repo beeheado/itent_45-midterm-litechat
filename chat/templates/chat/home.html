@@ -1,0 +1,36 @@
+{% extends "chat/base.html" %}
+{% block title %}Chat · HeavyChat{% endblock %}
+{% block page_context %}New conversation{% endblock %}
+{% block content %}
+<section class="welcome-layout">
+  <div class="welcome-copy">
+    <p class="eyebrow"><span class="eyebrow-line"></span> YOUR THINKING SPACE</p>
+    <h1>Make room<br>for <em>big ideas.</em></h1>
+    <p class="welcome-description">Choose a model tuned to the work. Your account, context, and conversation stay together from the first prompt.</p>
+    <button class="primary-button primary-button-large" type="button"
+            hx-get="{% url 'chat:model-selector' %}"
+            hx-target="#model-modal-host"
+            hx-swap="innerHTML">
+      <span aria-hidden="true">+</span> Start a new chat
+    </button>
+    <div class="welcome-footnote"><span class="tiny-shield" aria-hidden="true">&#9671;</span> Private by design <span class="footnote-divider">·</span> Choose where credits are charged</div>
+  </div>
+  <div class="welcome-art" aria-hidden="true">
+    <div class="orbit orbit-outer"></div>
+    <div class="orbit orbit-inner"></div>
+    <div class="orbit-core"><span>H</span></div>
+    <span class="orbit-label orbit-label-top">IDEAS IN MOTION</span>
+    <span class="orbit-label orbit-label-bottom">LUNA / TERRA / SOL</span>
+    <span class="orbit-dot orbit-dot-one"></span>
+    <span class="orbit-dot orbit-dot-two"></span>
+  </div>
+</section>
+<section class="home-lower">
+  <div class="section-rule"><span>START WITH AN INTENTION</span><span>01 — 03</span></div>
+  <div class="intent-grid">
+    <article><span class="intent-number">01</span><h2>Shape the thought</h2><p>Set a global prompt and reusable memories from your profile.</p></article>
+    <article><span class="intent-number">02</span><h2>Choose your depth</h2><p>Move between fast drafts, balanced work, and deeper analysis.</p></article>
+    <article><span class="intent-number">03</span><h2>Stay in control</h2><p>Every session is tied to the billing account you choose.</p></article>
+  </div>
+</section>
+{% endblock %}

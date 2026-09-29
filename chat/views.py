@@ -3,12 +3,25 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+from decimal import Decimal
+from uuid import uuid4
 
 from asgiref.sync import sync_to_async
 from django.conf import settings
-from django.http import HttpResponse, HttpResponseNotAllowed, JsonResponse, StreamingHttpResponse
+from django.contrib.auth.decorators import login_required
+from django.http import (
+    HttpResponse,
+    HttpResponseNotAllowed,
+    JsonResponse,
+    StreamingHttpResponse,
+)
+from django.shortcuts import get_object_or_404, redirect, render
+from django.template.loader import render_to_string
+from django.urls import reverse
+from django.views.decorators.http import require_POST
 
-from core.services import InsufficientCredits, LedgerError
+from core.models import BillingAccount, ChatMessage, ChatSession, MemoryItem, ModelCatalog, UserProfile
+from core.services import InsufficientCredits, LedgerError, deposit_credits
 from .services.context import (
     InactiveModel,
     SessionNotAvailable,
@@ -22,6 +35,230 @@ from .services.proxy_stream import ProxyStreamError, stream_completion
 
 
 logger = logging.getLogger(__name__)
+MODEL_PRESENTATION = {
+    ModelCatalog.Tier.SOL: (
+        "Premium",
+        "OpenAI's deepest-reasoning model for complex coding and analysis.",
+    ),
+    ModelCatalog.Tier.TERRA: (
+        "Standard",
+        "OpenAI's balanced model for everyday coding, reasoning, and professional work.",
+    ),
+    ModelCatalog.Tier.LUNA: (
+        "Fast / Low-cost",
+        "OpenAI's fast, low-cost model for everyday questions and quick drafts.",
+    ),
+}
+MODEL_TIER_ORDER = {
+    ModelCatalog.Tier.SOL: 0,
+    ModelCatalog.Tier.TERRA: 1,
+    ModelCatalog.Tier.LUNA: 2,
+}
+
+
+def _display_name(user) -> str:
+    return user.get_full_name().strip() or user.get_username()
+
+
+def _default_billing_account(user) -> BillingAccount:
+    account = BillingAccount.objects.filter(user=user).order_by("pk").first()
+    if account:
+        return account
+    return BillingAccount.objects.create(
+        user=user,
+        name=f"[Personal] {_display_name(user)}",
+    )
+
+
+def _shell_context(request, active_session=None) -> dict[str, object]:
+    accounts = list(BillingAccount.objects.filter(user=request.user).order_by("pk"))
+    if not accounts:
+        accounts = [_default_billing_account(request.user)]
+    current_account = (
+        active_session.billing_account if active_session else accounts[0]
+    )
+    return {
+        "display_name": _display_name(request.user),
+        "billing_accounts": accounts,
+        "current_account": current_account,
+        "balance_usd": Decimal(current_account.credit_balance) / Decimal(100),
+        "sessions": ChatSession.objects.filter(owner=request.user)
+        .select_related("model", "billing_account")
+        .order_by("-updated_at", "-pk")[:15],
+        "active_session": active_session,
+    }
+
+
+@login_required
+def home(request):
+    context = _shell_context(request)
+    if context["sessions"]:
+        return redirect("chat:session-detail", session_id=context["sessions"][0].pk)
+    return render(request, "chat/home.html", context)
+
+
+@login_required
+def simgen_placeholder(request):
+    return render(request, "chat/simgen.html", _shell_context(request))
+
+
+@login_required
+def session_detail(request, session_id: int):
+    session = get_object_or_404(
+        ChatSession.objects.select_related("billing_account", "model"),
+        pk=session_id,
+        owner=request.user,
+    )
+    context = _shell_context(request, session)
+    context["session"] = session
+    context["messages"] = session.messages.filter(
+        status=ChatMessage.Status.COMPLETE
+    ).order_by("created_at", "pk")
+    return render(request, "chat/session.html", context)
+
+
+@login_required
+def model_selector(request):
+    context = _shell_context(request)
+    models = ModelCatalog.objects.filter(
+        provider=ModelCatalog.Provider.OPENAI,
+        is_active=True,
+    )
+    context["model_cards"] = [
+        {
+            "model": model,
+            "badge": MODEL_PRESENTATION[model.tier][0],
+            "description": MODEL_PRESENTATION[model.tier][1],
+        }
+        for model in sorted(models, key=lambda item: MODEL_TIER_ORDER.get(item.tier, 99))
+    ]
+    return render(request, "chat/partials/model_selector.html", context)
+
+
+@login_required
+def close_model_selector(request):
+    return HttpResponse("")
+
+
+@login_required
+@require_POST
+def create_session(request):
+    account = BillingAccount.objects.filter(
+        pk=request.POST.get("billing_account_id"),
+        user=request.user,
+    ).first()
+    model = ModelCatalog.objects.filter(
+        pk=request.POST.get("model_id"),
+        provider=ModelCatalog.Provider.OPENAI,
+        is_active=True,
+    ).first()
+    if account is None or model is None:
+        return HttpResponse("Choose an available model and your own billing account.", status=400)
+    session = ChatSession(
+        owner=request.user,
+        billing_account=account,
+        model=model,
+        title=model.display_name,
+    )
+    session.full_clean()
+    session.save()
+    response = HttpResponse(status=204)
+    if request.headers.get("HX-Request"):
+        response["HX-Redirect"] = reverse("chat:session-detail", args=(session.pk,))
+        return response
+    return redirect("chat:session-detail", session_id=session.pk)
+
+
+@login_required
+def profile(request):
+    user_profile, _ = UserProfile.objects.get_or_create(user=request.user)
+    context = _shell_context(request)
+    context.update(
+        {
+            "user_profile": user_profile,
+            "memory_items": user_profile.memory_items.order_by("created_at", "pk"),
+            "member_since": request.user.date_joined,
+            "user_id": request.user.pk,
+        }
+    )
+    return render(request, "chat/profile.html", context)
+
+
+@login_required
+@require_POST
+def save_global_prompt(request):
+    user_profile, _ = UserProfile.objects.get_or_create(user=request.user)
+    prompt = request.POST.get("global_system_prompt", "")
+    if len(prompt) > 100_000:
+        return HttpResponse("Prompt is too long.", status=400)
+    user_profile.global_system_prompt = prompt
+    user_profile.save(update_fields=("global_system_prompt",))
+    return render(request, "chat/partials/prompt_saved.html")
+
+
+@login_required
+@require_POST
+def toggle_ai_memories(request):
+    user_profile, _ = UserProfile.objects.get_or_create(user=request.user)
+    user_profile.ai_memories_enabled = request.POST.get("ai_memories_enabled") == "on"
+    user_profile.save(update_fields=("ai_memories_enabled",))
+    return render(
+        request,
+        "chat/partials/memory_toggle.html",
+        {"user_profile": user_profile},
+    )
+
+
+@login_required
+@require_POST
+def add_memory_item(request):
+    user_profile, _ = UserProfile.objects.get_or_create(user=request.user)
+    category = request.POST.get("category")
+    content = request.POST.get("content", "").strip()
+    if category not in MemoryItem.Category.values or not content or len(content) > 10_000:
+        return HttpResponse("Choose a category and enter a memory under 10,000 characters.", status=400)
+    MemoryItem.objects.create(
+        user_profile=user_profile,
+        category=category,
+        content=content,
+    )
+    return render(
+        request,
+        "chat/partials/memory_list.html",
+        {"memory_items": user_profile.memory_items.order_by("created_at", "pk")},
+    )
+
+
+@login_required
+@require_POST
+def delete_memory_item(request, memory_id: int):
+    memory = get_object_or_404(
+        MemoryItem,
+        pk=memory_id,
+        user_profile__user=request.user,
+    )
+    memory.delete()
+    return HttpResponse("")
+
+
+@login_required
+@require_POST
+def mock_top_up(request):
+    account = get_object_or_404(
+        BillingAccount,
+        pk=request.POST.get("billing_account_id"),
+        user=request.user,
+    )
+    deposit_credits(account, 500, f"mock-top-up:{uuid4().hex}")
+    account.refresh_from_db()
+    return render(
+        request,
+        "chat/partials/balance_badge.html",
+        {
+            "current_account": account,
+            "balance_usd": Decimal(account.credit_balance) / Decimal(100),
+        },
+    )
 
 
 def _sse_event(name: str, payload: dict[str, object]) -> bytes:

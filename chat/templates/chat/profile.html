@@ -1,0 +1,72 @@
+{% extends "chat/base.html" %}
+{% block title %}My Profile · HeavyChat{% endblock %}
+{% block page_context %}My Profile{% endblock %}
+{% block content %}
+<section class="profile-page">
+  <header class="page-heading profile-heading">
+    <div>
+      <p class="eyebrow"><span class="eyebrow-line"></span> ACCOUNT SETTINGS</p>
+      <h1>My profile<span class="heading-period">.</span></h1>
+      <p class="page-subtitle">Tune how HeavyChat works with you. Changes apply to future sessions.</p>
+    </div>
+    <form class="topup-form" method="post" action="{% url 'chat:mock-top-up' %}"
+          hx-post="{% url 'chat:mock-top-up' %}" hx-target="#balance-badge" hx-swap="outerHTML">
+      {% csrf_token %}
+      <input type="hidden" name="billing_account_id" value="{{ current_account.pk }}">
+      <button type="submit" class="secondary-button topup-button">Top Up (+500 Credits / $5.00)</button>
+      <span class="topup-note">Mock balance credit. No payment is processed.</span>
+    </form>
+  </header>
+
+  <div class="profile-grid">
+    <section class="panel identity-panel">
+      <div class="panel-heading"><div><p class="panel-kicker">YOUR ACCOUNT</p><h2>Identity</h2></div><span class="identity-mark" aria-hidden="true">{{ display_name|slice:":1"|upper }}</span></div>
+      <p class="identity-name-label">DISPLAY NAME</p>
+      <div class="identity-name">{{ display_name }}</div>
+      <dl class="identity-details">
+        <div><dt>Username / UUID</dt><dd>{{ request.user.username }}</dd></div>
+        <div><dt>User ID</dt><dd>#{{ user_id }}</dd></div>
+        <div><dt>Member since</dt><dd>{{ member_since|date:"F j, Y" }}</dd></div>
+      </dl>
+    </section>
+
+    <section class="panel prompt-panel">
+      <div class="panel-heading"><div><p class="panel-kicker">APPLIES TO EVERY CHAT</p><h2>Global system prompt</h2></div><span class="panel-index">01</span></div>
+      <p class="panel-description">Give HeavyChat a standing voice, role, or set of preferences. This prompt is prepended to future conversations.</p>
+      <form method="post" action="{% url 'chat:save-global-prompt' %}"
+            hx-post="{% url 'chat:save-global-prompt' %}" hx-target="#prompt-save-status" hx-swap="innerHTML">
+        {% csrf_token %}
+        <label class="sr-only" for="global-system-prompt">Global system prompt</label>
+        <textarea id="global-system-prompt" name="global_system_prompt" class="profile-textarea" maxlength="100000" placeholder="You are a thoughtful, concise collaborator...">{{ user_profile.global_system_prompt }}</textarea>
+        <div class="form-footer"><span class="muted-hint">Private to your account</span><button type="submit" class="primary-button">Save prompt <span aria-hidden="true">&#8594;</span></button></div>
+        <div id="prompt-save-status" class="inline-status" aria-live="polite"></div>
+      </form>
+    </section>
+
+    <section class="panel memories-panel">
+      <div class="panel-heading"><div><p class="panel-kicker">PERSONAL CONTEXT</p><h2>Memory items</h2></div><span class="panel-index">02</span></div>
+      <p class="panel-description">Save details you want available in future chats. Memories are treated as reference context, not system policy.</p>
+      <div class="memory-controls" id="memory-toggle">
+        {% include "chat/partials/memory_toggle.html" %}
+      </div>
+      <div class="memory-list" id="memory-list">
+        {% include "chat/partials/memory_list.html" %}
+      </div>
+      <form class="memory-add-form" method="post" action="{% url 'chat:add-memory' %}"
+            hx-post="{% url 'chat:add-memory' %}" hx-target="#memory-list" hx-swap="innerHTML">
+        {% csrf_token %}
+        <div class="memory-form-heading"><span>ADD A MEMORY</span><span class="panel-index">+</span></div>
+        <label class="sr-only" for="memory-category">Memory category</label>
+        <select id="memory-category" name="category" required>
+          <option value="preference">Preference</option>
+          <option value="fact">Fact</option>
+          <option value="instruction">Instruction</option>
+        </select>
+        <label class="sr-only" for="memory-content">Memory content</label>
+        <input id="memory-content" type="text" name="content" maxlength="10000" placeholder="e.g. Prefers Python examples" required>
+        <button class="secondary-button" type="submit">Add memory</button>
+      </form>
+    </section>
+  </div>
+</section>
+{% endblock %}

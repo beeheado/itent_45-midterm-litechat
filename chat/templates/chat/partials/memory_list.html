@@ -1,0 +1,12 @@
+{% for memory in memory_items %}
+  <article class="memory-card" id="memory-{{ memory.pk }}">
+    <div class="memory-card-copy"><span class="memory-category">{{ memory.get_category_display }}</span><p>{{ memory.content }}</p></div>
+    <form method="post" action="{% url 'chat:delete-memory' memory.pk %}"
+          hx-post="{% url 'chat:delete-memory' memory.pk %}" hx-target="closest .memory-card" hx-swap="outerHTML">
+      {% csrf_token %}
+      <button class="icon-button memory-delete" type="submit" aria-label="Delete memory">&times;</button>
+    </form>
+  </article>
+{% empty %}
+  <div class="memory-empty">No memories yet. Add a preference, fact, or instruction to get started.</div>
+{% endfor %}

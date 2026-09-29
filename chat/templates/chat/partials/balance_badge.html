@@ -1,0 +1,9 @@
+<div class="balance-badge" id="balance-badge" data-balance-badge data-account-id="{{ current_account.pk }}">
+  <span class="balance-led" aria-hidden="true"></span>
+  <span class="balance-account">{{ current_account.name }}</span>
+  <span class="balance-divider" aria-hidden="true"></span>
+  <span class="balance-numbers">
+    <strong><span data-credit-balance>{{ current_account.credit_balance }}</span> credits</strong>
+    <small>$<span data-usd-balance>{{ balance_usd|floatformat:2 }}</span></small>
+  </span>
+</div>
