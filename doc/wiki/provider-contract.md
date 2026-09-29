@@ -2,38 +2,48 @@
 
 ## Status
 
-Provider contract capture is **blocked**. No model list or streaming completion has been observed, so this document makes no claims about LiteChat's completion payload, delta schema, final usage object, or `[DONE]` behavior.
+Phase 1 provider capture is complete using the live fixture supplied in `tests/fixtures/provider_stream.sse`. The fixture bytes were inspected locally and not modified. The endpoint, model, and HTTP 200 status came with the user's capture report; response headers and exact capture time were not supplied.
 
-## Capture Attempt
+## Routing and Model
 
-- **Captured at:** 2026-09-29T05:15:00Z
-- **Method:** `python3 scripts/capture_proxy.py`
-- **Credential handling:** The script read `LITECHAT_API_KEY` from the repository `.env` and sent it as a bearer credential. The key value was not printed or written to artifacts. `.env` is excluded by `.gitignore`. The 404 does not establish whether the credential itself is valid.
-- **Capture client:** Python 3.12.3, standard-library `urllib.request`
-- **Request:** `GET https://proxy.litechat.ai/v1/models` with a bearer authorization header
-- **Result:** HTTP 404, `content-type: text/plain; charset=utf-8`
-- **Request ID:** `req_u34MlSunYED7xBkIZeiPwWCuTt47TEY6MHVKHrtjeW4`
-- **Models returned:** None
-- **Completion request:** Not sent because no active model could be discovered.
+- **Provider base URL:** `https://proxy.litechat.ai/openai/v1`
+- **Chat Completions endpoint:** `https://proxy.litechat.ai/openai/v1/chat/completions`
+- **Model discovery:** `/models` is unmapped on this gateway. Requests must use the provider-prefixed route and a known model instead of model discovery.
+- **Observed model:** `gpt-5.6-luna` (also present in the captured completion chunks).
+- **Reported response status:** HTTP 200, as supplied with the live fixture.
+- **Response headers:** Not included with the supplied fixture; `sanitized_headers` is empty rather than inferred.
 
-The sanitized response facts are recorded in [`tests/fixtures/provider_stream_meta.json`](../../tests/fixtures/provider_stream_meta.json). This metadata is an error record, not a successful provider capture. `tests/fixtures/provider_stream.sse` was intentionally not created; no raw SSE bytes were received, and no synthetic stream was substituted.
+The previous request to `https://proxy.litechat.ai/v1/models` returned HTTP 404. The route resolution is the added `/openai` provider prefix, not evidence that the key was invalid.
 
-## What Is and Is Not Verified
+## Stream Shape
 
-This attempt verifies only that the supplied base URL's `/models` route returned HTTP 404 to this request. It does not establish that the API key is invalid, that all LiteChat API routes are unavailable, or that `/chat/completions` lacks streaming support. The prior plain GET to the base URL also returned 404 and is not a substitute for a successful API request.
+The fixture contains 51 JSON `data:` events, followed by `data: [DONE]` and the terminating blank line. Each completion event uses an OpenAI-style `choices` array and `choices[0].delta`.
 
-There is no provider evidence yet for:
+- Deltas contain `reasoning_content` as well as `content`. In this fixture, 47 deltas have non-null `reasoning_content` (one is an empty string), and 3 have non-null `content` (one is an empty string).
+- Reasoning and user-facing content are separate fields. Do not concatenate `reasoning_content` into `content` or render it as ordinary assistant output. Keep its handling separate pending an explicit product policy.
+- The last choice-bearing chunk has `finish_reason: "stop"`.
+- A following usage-only chunk has `choices: []` and `usage` with `prompt_tokens: 208`, `completion_tokens: 49`, and `total_tokens: 257`. Its `completion_tokens_details.reasoning_tokens` is `46`; it also reports prompt cache hit/miss fields.
+- The stream then terminates with the `data: [DONE]` sentinel.
 
-- Available model IDs, capabilities, or model-list pagination.
-- Chat completion request options accepted by the proxy.
-- SSE event framing, role/content/tool deltas, finish reasons, or error events.
-- A final usage event or `prompt_tokens`/`completion_tokens` fields.
-- The `[DONE]` sentinel or response headers on a successful stream.
+The ordering matters: the client must continue reading after `finish_reason` to receive the separate usage chunk, and only then process `[DONE]`. Do not assume every event has text in `delta.content` or even a non-empty `choices` array.
+
+## Fixture Provenance
+
+- Raw fixture: [`tests/fixtures/provider_stream.sse`](../../tests/fixtures/provider_stream.sse)
+- Metadata: [`tests/fixtures/provider_stream_meta.json`](../../tests/fixtures/provider_stream_meta.json)
+- Raw byte length: 15,426
+- SHA-256: `aa2219921ad676ac448eadd2ebfa86675d040ee22b119156e25e479ae7d6734b`
+- Models, usage fields, finish reason, delta-field counts, and termination sentinel were parsed from the fixture. Capture timestamp and response headers were unavailable from the supplied artifact, so neither is presented as observed.
 
 ## Capture Tool
 
-[`scripts/capture_proxy.py`](../../scripts/capture_proxy.py) loads the key from `.env`, requests the model list, chooses a returned active model (or validates `--model`), and is prepared to write raw SSE bytes and sanitized response metadata. Redirects are rejected so the bearer token is not forwarded to another host. Failed HTTP responses record only the endpoint, method, status, timestamp, and allowlisted headers; response bodies and credentials are not persisted.
+[`scripts/capture_proxy.py`](../../scripts/capture_proxy.py) reads `LITECHAT_API_KEY` from the repository `.env` and posts directly to the provider-prefixed Chat Completions endpoint. Its default model is `gpt-5.6-luna`; it no longer calls `/models`. It stores response bytes unchanged and writes allowlisted response headers and stream observations to the metadata file. Redirects are rejected so the bearer token is not forwarded to another host.
 
-## Resume Gate
+## Parser Contract
 
-Confirm the correct API route/configuration with the provider or account owner, then rerun the capture script. Once model discovery succeeds, capture a minimal synthetic streaming completion to `tests/fixtures/provider_stream.sse` and verify its final usage and termination behavior before finalizing any parser contract. Preserve the raw response unchanged and keep provenance metadata free of credentials and personal data.
+The stream consumer must:
+
+- Append `delta.content` to the user-visible assistant response when it is a string.
+- Handle `delta.reasoning_content` independently; do not expose it as user-visible content by default.
+- Continue after a `finish_reason` chunk and consume the subsequent usage-only chunk.
+- Read the aggregate prompt/completion token counts from the final usage object and recognize `[DONE]` as stream termination.

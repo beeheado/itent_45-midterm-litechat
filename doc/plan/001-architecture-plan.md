@@ -1,9 +1,9 @@
 # HeavyChat Initial Architecture Plan
 
 - **Created:** 2026-09-29T04:57:26+00:00
-- **Updated:** 2026-09-29T05:15:00+00:00
+- **Updated:** 2026-09-29T05:31:14+00:00
 - **Study:** [`doc/study/001-architecture-study.md`](../study/001-architecture-study.md)
-- **Status:** Approved; Phase 1 was attempted and is blocked at provider model discovery.
+- **Status:** Phase 1 complete; awaiting approval before Phase 2.
 - **Scope:** Establish the initial HeavyChat architecture, including real proxy capture, billing accounts, model tiers, profile context, usage pricing, credit integrity, streaming, and the initial UI. This checklist is the execution boundary; changes outside it require a new study and plan.
 
 ## Resolved Product Decisions
@@ -17,7 +17,7 @@
 
 ## Remaining Dependencies and Design Questions
 
-- [ ] Resolve the `/v1/models` HTTP 404 and verify provider access; a non-empty `LITECHAT_API_KEY` was found in `.env`, but the response does not establish whether the key is valid.
+- [x] Resolve the `/v1/models` HTTP 404: this gateway uses the provider-prefixed `/openai/v1` route, does not map `/models`, and the supplied live fixture reports HTTP 200 for Chat Completions.
 - [ ] Confirm whether usage audit is one billable `UsageTransaction` per provider completion (recommended) with events associated separately, or whether a non-billing event record is also needed. Do not allocate aggregate final usage across deltas without an explicit rule.
 - [ ] Identify the intended production database before enabling concurrent billing. SQLite is the local-development default, not proof of concurrent ledger safety.
 - [ ] Confirm provider catalog rates are USD; define behavior if the provider reports another currency. Do not silently apply the USD-to-credit formula to an unknown currency.
@@ -28,17 +28,14 @@
 ### 1. Capture the Real Provider Contract First
 
 - [x] Ensure `.env` is excluded from version control and available to the capture process without displaying credential values.
-- [x] Create `scripts/capture_proxy.py` to load the API key from `.env` securely and support model discovery and raw streaming capture.
-- [x] Run `scripts/capture_proxy.py`; the `GET /v1/models` request carrying the bearer authorization header returned HTTP 404. See the Phase 1 execution note below.
-- [ ] After model discovery succeeds, make a minimal synthetic streaming completion request, request final usage if supported, and capture actual SSE bytes including deltas, finish/completion events, usage, and `[DONE]` behavior.
-- [ ] Save unchanged raw SSE bytes to `tests/fixtures/provider_stream.sse` and sanitized success metadata (UTC time, endpoint, model, capture transport/runtime version, sanitized options, status, and allowlisted response headers). No stream fixture exists yet.
-- [ ] Review the real fixture for personal data and secrets. If model listing or completion fails again, preserve safe diagnostic facts and stop provider-dependent parser work; never substitute a fabricated response.
+- [x] Update `scripts/capture_proxy.py` to load the API key from `.env` securely and post directly to `https://proxy.litechat.ai/openai/v1/chat/completions`, defaulting to `gpt-5.6-luna`; do not call `/models` on this gateway.
+- [x] Inspect the supplied live fixture and verify the model, `reasoning_content` and `content` deltas, final usage chunk, `finish_reason`, and `[DONE]` termination without modifying the raw bytes.
+- [x] Record status 200, endpoint, model, stream observations, and the fixture hash in `tests/fixtures/provider_stream_meta.json`. Response headers and exact capture time were not included with the fixture and are marked unavailable rather than fabricated.
+- [x] Review the fixture for secrets and personal data; keep `reasoning_content` separate from user-visible content.
 
 #### Phase 1 Execution Note
 
-- Latest attempt at `2026-09-29T05:15:00Z` by running `python3 scripts/capture_proxy.py`.
-- `GET https://proxy.litechat.ai/v1/models` returned HTTP 404 (`content-type: text/plain; charset=utf-8`; request ID `req_u34MlSunYED7xBkIZeiPwWCuTt47TEY6MHVKHrtjeW4`). No models were returned, so no completion POST was sent.
-- `tests/fixtures/provider_stream_meta.json` contains the sanitized failure metadata. `tests/fixtures/provider_stream.sse` was intentionally not created because no real stream was received.
+The first `/v1/models` attempt returned 404 because model discovery is unmapped on this gateway. The user supplied the provider-prefixed route, active model, and live fixture; the fixture was independently parsed and its SHA-256 recorded. The capture utility now targets that direct completion endpoint. No Phase 2 application implementation has started.
 
 ### 2. Establish the Application Foundation
 
@@ -83,4 +80,4 @@
 
 ## Stop Condition
 
-The plan is approved, but Phase 1 is blocked at the authenticated model-list request. Do not proceed to provider parsing or later implementation phases until `/v1/models` returns an active model and a real completion stream is captured. No synthetic stream may be used to clear this gate.
+Phase 1 is complete. Halt here and wait for explicit user approval before starting Phase 2 or any application implementation.

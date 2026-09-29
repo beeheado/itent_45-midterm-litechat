@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Capture a real LiteChat model list and raw streaming completion."""
+"""Capture a raw LiteChat Chat Completions stream."""
 
 from __future__ import annotations
 
@@ -17,9 +17,9 @@ from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 
 ROOT = Path(__file__).resolve().parents[1]
-BASE_URL = "https://proxy.litechat.ai/v1"
-MODELS_ENDPOINT = f"{BASE_URL}/models"
+BASE_URL = "https://proxy.litechat.ai/openai/v1"
 COMPLETIONS_ENDPOINT = f"{BASE_URL}/chat/completions"
+DEFAULT_MODEL = "gpt-5.6-luna"
 DEFAULT_FIXTURE = ROOT / "tests/fixtures/provider_stream.sse"
 ALLOWED_RESPONSE_HEADERS = {
     "content-type",
@@ -32,7 +32,6 @@ ALLOWED_RESPONSE_HEADERS = {
     "x-ratelimit-remaining-requests",
     "x-request-id",
 }
-MAX_MODELS_RESPONSE_BYTES = 2 * 1024 * 1024
 MAX_STREAM_BYTES = 2 * 1024 * 1024
 
 
@@ -126,68 +125,6 @@ def safe_http_failure(method: str, endpoint: str, error: HTTPError) -> CaptureEr
     )
 
 
-def fetch_models(api_key: str) -> tuple[list[dict[str, object]], int, dict[str, str]]:
-    request = Request(
-        MODELS_ENDPOINT,
-        headers={
-            "Accept": "application/json",
-            "Authorization": f"Bearer {api_key}",
-            "User-Agent": "HeavyChat-provider-capture/1.0",
-        },
-        method="GET",
-    )
-    try:
-        with open_url(request, timeout=45) as response:
-            status = response.status
-            headers = sanitize_headers(response.headers)
-            body = response.read(MAX_MODELS_RESPONSE_BYTES + 1)
-    except HTTPError as error:
-        raise safe_http_failure("GET", MODELS_ENDPOINT, error) from None
-    except (URLError, TimeoutError, OSError) as error:
-        raise CaptureError(f"GET {MODELS_ENDPOINT} failed ({type(error).__name__})") from None
-
-    if len(body) > MAX_MODELS_RESPONSE_BYTES:
-        raise CaptureError("Models response exceeded the 2 MiB safety limit")
-    try:
-        payload = json.loads(body)
-    except (UnicodeDecodeError, json.JSONDecodeError):
-        raise CaptureError("Models endpoint returned invalid JSON") from None
-
-    records = payload.get("data", payload.get("models")) if isinstance(payload, dict) else None
-    if not isinstance(records, list):
-        raise CaptureError("Models response did not contain a data/models list")
-    models = [record for record in records if isinstance(record, dict)]
-    return models, status, headers
-
-
-def model_id(record: dict[str, object]) -> str | None:
-    value = record.get("id")
-    return value if isinstance(value, str) and value else None
-
-
-def is_active(record: dict[str, object]) -> bool:
-    if record.get("active") is False:
-        return False
-    status = record.get("status")
-    return not (isinstance(status, str) and status.lower() in {"disabled", "inactive"})
-
-
-def choose_model(models: list[dict[str, object]], requested_model: str | None) -> tuple[str, list[str]]:
-    available = [model_id(record) for record in models if model_id(record)]
-    active = [
-        model_id(record)
-        for record in models
-        if model_id(record) and is_active(record)
-    ]
-    if not active:
-        raise CaptureError("Models endpoint returned no active model IDs")
-    if requested_model:
-        if requested_model not in active:
-            raise CaptureError("Requested model is not listed as active by the models endpoint")
-        return requested_model, [model for model in available if model is not None]
-    return active[0], [model for model in available if model is not None]
-
-
 def read_stream(api_key: str, model: str) -> tuple[bytes, int, dict[str, str]]:
     request_body = {
         "model": model,
@@ -237,9 +174,12 @@ def read_stream(api_key: str, model: str) -> tuple[bytes, int, dict[str, str]]:
 
 def inspect_stream(
     stream: bytes,
-) -> tuple[int, list[dict[str, object]], bool]:
+) -> dict[str, object]:
     data_events = 0
     usage_objects: list[dict[str, object]] = []
+    reasoning_content_deltas = 0
+    content_deltas = 0
+    finish_reasons: list[str] = []
     for line in stream.splitlines():
         if not line.startswith(b"data:"):
             continue
@@ -251,20 +191,58 @@ def inspect_stream(
         except (UnicodeDecodeError, json.JSONDecodeError):
             continue
         data_events += 1
-        if isinstance(payload, dict) and isinstance(payload.get("usage"), dict):
+        if not isinstance(payload, dict):
+            continue
+        choices = payload.get("choices")
+        if isinstance(choices, list):
+            for choice in choices:
+                if not isinstance(choice, dict):
+                    continue
+                delta = choice.get("delta")
+                if isinstance(delta, dict):
+                    if delta.get("reasoning_content") is not None:
+                        reasoning_content_deltas += 1
+                    if delta.get("content") is not None:
+                        content_deltas += 1
+                finish_reason = choice.get("finish_reason")
+                if (
+                    isinstance(finish_reason, str)
+                    and finish_reason not in finish_reasons
+                ):
+                    finish_reasons.append(finish_reason)
+        if isinstance(payload.get("usage"), dict):
             usage = payload["usage"]
-            usage_objects.append(
-                {
-                    key: usage[key]
-                    for key in ("prompt_tokens", "completion_tokens", "total_tokens")
-                    if isinstance(usage.get(key), int)
-                }
-            )
+            usage_record = {
+                key: usage[key]
+                for key in (
+                    "prompt_tokens",
+                    "completion_tokens",
+                    "total_tokens",
+                    "prompt_cache_hit_tokens",
+                    "prompt_cache_miss_tokens",
+                )
+                if isinstance(usage.get(key), int)
+            }
+            completion_details = usage.get("completion_tokens_details")
+            if isinstance(completion_details, dict) and isinstance(
+                completion_details.get("reasoning_tokens"), int
+            ):
+                usage_record["reasoning_tokens"] = completion_details[
+                    "reasoning_tokens"
+                ]
+            usage_objects.append(usage_record)
     done_found = any(
         line.startswith(b"data:") and line[5:].strip() == b"[DONE]"
         for line in stream.splitlines()
     )
-    return data_events, usage_objects, done_found
+    return {
+        "data_event_count": data_events,
+        "reasoning_content_delta_count": reasoning_content_deltas,
+        "content_delta_count": content_deltas,
+        "finish_reasons": finish_reasons,
+        "usage_objects": usage_objects,
+        "done_sentinel_found": done_found,
+    }
 
 
 def atomic_write(path: Path, content: bytes) -> None:
@@ -310,29 +288,22 @@ def write_failure_metadata(
     )
 
 
-def capture(output_path: Path, requested_model: str | None) -> Path:
+def capture(output_path: Path, model: str) -> Path:
     try:
         api_key = read_api_key(ROOT / ".env")
-        models, models_status, models_headers = fetch_models(api_key)
     except CaptureError as error:
         write_failure_metadata(output_path, error)
         raise
-    selected_model, returned_models = choose_model(models, requested_model)
-
-    print("Models returned by LiteChat:")
-    for item in models:
-        identifier = model_id(item)
-        if identifier:
-            state = "active" if is_active(item) else "inactive"
-            print(f"  {identifier} ({state})")
-    print(f"Selected model: {selected_model}")
+    print(f"Using model: {model}")
 
     try:
-        stream, completion_status, completion_headers = read_stream(api_key, selected_model)
+        stream, completion_status, completion_headers = read_stream(
+            api_key, model
+        )
     except CaptureError as error:
-        write_failure_metadata(output_path, error, selected_model)
+        write_failure_metadata(output_path, error, model)
         raise
-    event_count, usage_objects, done_found = inspect_stream(stream)
+    observations = inspect_stream(stream)
     atomic_write(output_path, stream)
 
     metadata = {
@@ -341,12 +312,8 @@ def capture(output_path: Path, requested_model: str | None) -> Path:
             "transport": "urllib.request",
             "python_version": platform.python_version(),
         },
-        "models_endpoint": MODELS_ENDPOINT,
-        "models_status": models_status,
-        "models_headers": models_headers,
-        "models_returned": returned_models,
-        "completion_endpoint": COMPLETIONS_ENDPOINT,
-        "model": selected_model,
+        "endpoint": COMPLETIONS_ENDPOINT,
+        "model": model,
         "status": completion_status,
         "sanitized_headers": completion_headers,
         "request_options": {
@@ -357,9 +324,7 @@ def capture(output_path: Path, requested_model: str | None) -> Path:
         },
         "sse_bytes": len(stream),
         "sse_sha256": hashlib.sha256(stream).hexdigest(),
-        "data_event_count": event_count,
-        "usage_objects": usage_objects,
-        "done_sentinel_found": done_found,
+        **observations,
     }
     metadata_path = output_path.with_name("provider_stream_meta.json")
     atomic_write(
@@ -370,10 +335,10 @@ def capture(output_path: Path, requested_model: str | None) -> Path:
     print(f"Captured {len(stream)} raw SSE bytes in {output_path}")
     print(f"Metadata written to {metadata_path}")
     print(
-        f"SSE data events: {event_count}; "
-        f"final usage object(s): {len(usage_objects)}"
+        f"SSE data events: {observations['data_event_count']}; "
+        f"final usage object(s): {len(observations['usage_objects'])}"
     )
-    print(f"[DONE] sentinel present: {done_found}")
+    print(f"[DONE] sentinel present: {observations['done_sentinel_found']}")
     return metadata_path
 
 
@@ -381,7 +346,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--model",
-        help="active model ID from the proxy's /models response (default: first active model)",
+        default=DEFAULT_MODEL,
+        help=f"model ID to capture (default: {DEFAULT_MODEL})",
     )
     parser.add_argument(
         "--output",
